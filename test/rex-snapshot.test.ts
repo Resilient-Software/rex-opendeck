@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 
+import { attentionQueue, countStates, spaceState } from "../src/state";
 import { activityCounts, agentOf, buildSnapshot, isAtPrompt, isShellForeground, paneStatus, type RawBlock, type RawRecord, type RawSnapshot, SeenTracker } from "../src/rex-snapshot";
 
 const TERMINAL = "com.superlogical.terminal";
@@ -163,9 +164,22 @@ describe("paneStatus", () => {
 
 	test("a seen root reads idle until its updated_at moves", () => {
 		expect(statusOf(CLAUDE, [{ state: "done", updated_at: "t1" }], "t1").status).toBe("idle");
-		expect(statusOf(ZSH, [{ state: "done", updated_at: "t1" }], "t1").status).toBe("idle");
 		expect(statusOf(CLAUDE, [{ state: "done", updated_at: "t2" }], "t1").status).toBe("done");
 		expect(statusOf(CLAUDE, [{ state: "done" }], undefined).status).toBe("done");
+	});
+
+	test("with no agent in front a seen root reads unknown, so the session leaves the summary", () => {
+		const done: RawRecord[] = [{ state: "done", updated_at: "t1", owner: { pid: 99 } }];
+		expect(statusOf(ZSH, done, "t1")).toEqual({ status: "unknown", error: false });
+		expect(statusOf(ZSH, [{ state: "error", updated_at: "t1" }], "t1")).toEqual({ status: "unknown", error: false });
+		expect(statusOf(undefined, done, "t1").status).toBe("unknown");
+		expect(statusOf({ pid: 1, argv0: "terraform" }, [{ state: "done", updated_at: "t1" }], "t1").status).toBe("unknown");
+		expect(statusOf({ pid: 1, argv0: "terraform" }, [{ state: "done", updated_at: "t1", owner: { pid: 1 } }], "t1").status).toBe("idle");
+		const snap = buildSnapshot({ sessions: [session("s", 1, [block("b", ZSH, done)])] }, { seen: new Map([["b", "t1"]]) });
+		expect(snap.workspaces[0].agent_status).toBe("unknown");
+		expect(spaceState(snap.workspaces[0], snap)).toBe("none");
+		expect(countStates(snap).total).toBe(0);
+		expect(attentionQueue(snap)).toEqual([]);
 	});
 
 	test("seen says nothing about working or blocked", () => {

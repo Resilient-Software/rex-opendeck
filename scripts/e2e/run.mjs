@@ -938,6 +938,11 @@ try {
 		await eventually(async () => argv0Base((await processOf(left)).foreground) === "sh", 3000, 100);
 		await settle();
 		check("killed, its done survives under the shell", footer(tile("left")) === "DONE", describe(tile("left")));
+		const counted = Number(words(svgOf(K.summary))[0]);
+		await focusOn(left);
+		await focusOn(s.docs);
+		await expectSoon("once seen, that shell reads UNKNOWN, not IDLE", () => footer(tile("left")) === "UNKNOWN", { timeoutMs: 2000, instead: () => describe(tile("left")) });
+		await expectSoon("and the summary stops counting it", () => Number(words(svgOf(K.summary))[0]) === counted - 1, { timeoutMs: 1000, instead: () => words(svgOf(K.summary)).join(" | ") });
 		await closeSession(left);
 
 		clearRecords(s.agent);

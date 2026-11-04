@@ -200,16 +200,18 @@ export type PaneStatus = { status: AgentStatus; error: boolean };
 
 /**
  * Rex keeps `done` until the next prompt, whether or not anyone looked, so a
- * root the user has seen reads as idle. Under a shell only a finished root
- * means anything: every other record is a leftover from a program now gone.
+ * root the user has seen reads as idle, or as unknown with no agent left to be
+ * idle. Under a shell only a finished root means anything: every other record
+ * is a leftover from a program now gone.
  */
 export function paneStatus(block: RawBlock, seenAt: string | undefined): PaneStatus {
 	const all = list<RawRecord>(block.records);
 	const records = all.filter((record) => !isActivityRecord(record));
 	const root = records.find(isRoot);
+	const agent = agentOf(block.foreground, all, block.child);
 	const finished = (): PaneStatus =>
 		root?.updated_at !== undefined && root.updated_at === seenAt
-			? { status: "idle", error: false }
+			? { status: agent ? "idle" : "unknown", error: false }
 			: { status: "done", error: root?.state === "error" };
 	if (isAtPrompt(block.foreground, all, block.child)) {
 		return isFinished(root) ? finished() : { status: "unknown", error: false };

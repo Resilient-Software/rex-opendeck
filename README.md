@@ -30,7 +30,7 @@ you most, blocked first.
 
 **Done means not yet seen.** Rex keeps an agent's `done` until its next turn.
 The deck clears it for you: a tile reads `DONE` until you have looked at that
-pane with Rex in front, then `IDLE`.
+pane with Rex in front, then `IDLE`, or `UNKNOWN` if the agent has since gone.
 
 **Drive agents.** Control keys send a slash command, a phrase, key presses or
 the next value of a cycle to the agent you are focused on, or to a session you

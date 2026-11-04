@@ -74,7 +74,7 @@ Rex's program status protocol reports one root record per terminal and any numbe
 
 ### Done means not yet seen
 
-Rex keeps `done` until the next prompt, whether or not anyone looked, so the deck keeps its own memory. A root `done` or `error` in the active window of the focused session is marked seen while the Rex app is frontmost; a pane whose root `updated_at` equals its seen value reads `idle`. The memory is per block, in process, and dropped with the block, so after a plugin restart panes read `DONE` until viewed. The system is asked what is in front only when there is something to mark.
+Rex keeps `done` until the next prompt, whether or not anyone looked, so the deck keeps its own memory. A root `done` or `error` in the active window of the focused session is marked seen while the Rex app is frontmost; a pane whose root `updated_at` equals its seen value reads `idle`, or `unknown` when no agent is in front, so a session whose agent has gone leaves the summary once you have looked at it. The memory is per block, in process, and dropped with the block, so after a plugin restart panes read `DONE` until viewed. The system is asked what is in front only when there is something to mark.
 
 ### Agent activity (optional)
 
