@@ -1,5 +1,5 @@
 import type { JsonObject } from "@elgato/utils";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import { type BridgeLike, DeckController, type KeyHandle, type KeyKind } from "../src/controller";
 import type { Pane, Snapshot, Workspace } from "../src/rex";
@@ -155,6 +155,47 @@ describe("Agent Summary", () => {
 		expect(summary.image).toContain("ALL CLEAR");
 	});
 
+});
+
+describe("refreshes", () => {
+	test("one asked for while a poll runs happens after it, not at the next reconcile", async () => {
+		const d = await deck();
+		const reads: (() => void)[] = [];
+		const first = session();
+		first.workspaces[1].agent_status = "working";
+		const second = session();
+		let polls = 0;
+		d.bridge.snapshot = async () => {
+			polls++;
+			if (polls === 1) {
+				await new Promise<void>((resolve) => reads.push(resolve));
+				return first;
+			}
+			return second;
+		};
+		d.place("t", "space", 0, 0);
+		d.place("t2", "space", 1, 0);
+		const running = d.controller.refresh();
+		await d.controller.refresh();
+		expect(polls).toBe(1);
+		reads[0]();
+		await running;
+		expect(d.keys.get("t2")?.image).toContain("#f9e2af");
+		await vi.waitFor(() => expect(polls).toBe(2), { timeout: 1000 });
+		await vi.waitFor(() => expect(d.keys.get("t2")?.image).toContain("#f38ba8"), { timeout: 1000 });
+	});
+
+	test("a poll nobody overlapped asks for no other", async () => {
+		const d = await deck();
+		let polls = 0;
+		d.bridge.snapshot = async () => {
+			polls++;
+			return session();
+		};
+		await d.controller.refresh();
+		await new Promise((resolve) => setTimeout(resolve, 400));
+		expect(polls).toBe(1);
+	});
 });
 
 describe("control keys", () => {

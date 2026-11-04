@@ -103,6 +103,7 @@ export class DeckController {
 	private page = 0;
 	private pendingFocusWS = "";
 	private pendingSince = 0;
+	private pollAgain = false;
 	private polling = false;
 	private readonly raise: () => Promise<void>;
 	private readonly refreshSoon = new Coalescer(EVENT_DEBOUNCE_MS, () => void this.poll(), EVENT_MIN_GAP_MS);
@@ -329,6 +330,8 @@ export class DeckController {
 
 	private async poll(): Promise<void> {
 		if (this.polling) {
+			// The running poll may have read past whatever asked for this one.
+			this.pollAgain = true;
 			return;
 		}
 		this.polling = true;
@@ -359,6 +362,10 @@ export class DeckController {
 			}
 		} finally {
 			this.polling = false;
+			if (this.pollAgain) {
+				this.pollAgain = false;
+				this.refreshSoon.trigger();
+			}
 		}
 	}
 
