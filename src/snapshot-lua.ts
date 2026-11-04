@@ -134,7 +134,8 @@ local function at_prompt(records, foreground, child)
     return true
   end
   for _, record in ipairs(records) do
-    if not is_activity(record) and owner_pid(record) == foreground.pid then
+    local owner = owner_pid(record)
+    if not is_activity(record) and owner ~= nil and owner == foreground.pid then
       return false
     end
   end

@@ -118,7 +118,7 @@ plugin against a fake Stream Deck host, a throwaway sandbox Rex server and a
 fake Mac app client, never your own sessions, presses keys the way a user would
 and checks what reaches the sandbox's panes, byte for byte. It compiles a small
 stand-in agent with `cc`, and refuses to start unless the plugin's `REX_SERVER`
-names the run's own temp socket. It takes about three minutes.
+names the run's own temp socket. It takes about four minutes.
 
 - `REX_BIN` picks the rex binary (default: `rex` on `PATH`).
 - `E2E_ACTIVITY=0` runs it without any `rsact/*` records, as the deck looks when
