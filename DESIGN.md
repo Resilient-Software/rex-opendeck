@@ -138,7 +138,7 @@ Each session is counted once, in the first state that applies: blocked, working,
 
 States always appear in that order. The key has two looks, chosen in the property inspector:
 
-- **Ring** (default): a donut of proportional segments on the plain background (a grey ring when nothing is counted), with the total in the centre. The footer names what matters most: `2 BLOCKED` in red; else `1 DONE` in teal; else, with a scheduled check pending, the loop or clock pictogram and the soonest countdown; else `ALL BUSY`; with nothing counted, `NO AGENTS`.
+- **Ring** (default): a donut of proportional segments on the plain background (a grey ring when nothing is counted), with the total in the centre. The footer names what matters most: `2 BLOCKED` in red; else `1 DONE` in teal; else, with a scheduled check pending, the loop or clock pictogram and the soonest countdown; else `1 IDLE` if any agent is idle; else `ALL BUSY`; with nothing counted, `NO AGENTS`.
 - **List:** one row per non-zero state — a colour swatch, the count and the state word. With nothing counted the key shows `NO AGENTS`.
 
 **Press** focuses the session that needs you most and raises the Rex app, exactly like a session tile, with `FOCUSING…` and `FAILED · TRY AGAIN` in the summary's footer. The order is blocked, then done, then idle, each by session number, skipping the session that is already focused. With nothing waiting, the footer flashes `ALL CLEAR`.

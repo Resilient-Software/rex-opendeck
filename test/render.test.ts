@@ -94,7 +94,17 @@ describe("summaryTile", () => {
 		expect(scheduled).toContain('fill="#cba6f7"');
 		expect(scheduled).toContain(">17M</text>");
 		expect(svg(summaryTile(counts({ working: 2 }), "ring"))).toContain(">ALL BUSY<");
+		expect(svg(summaryTile(counts({ background: 1, working: 1 }), "ring"))).toContain(">ALL BUSY<");
 		expect(svg(summaryTile(counts({}), "ring"))).toContain(">NO AGENTS<");
+	});
+
+	test("ring says ALL BUSY only when no agent is idle", () => {
+		const one = svg(summaryTile(counts({ idle: 1 }), "ring"));
+		expect(one).toContain(">1 IDLE<");
+		expect(one).not.toContain("ALL BUSY");
+		const mixed = svg(summaryTile(counts({ idle: 2, working: 3 }), "ring"));
+		expect(mixed).toContain(">2 IDLE<");
+		expect(mixed).not.toContain("ALL BUSY");
 	});
 
 	test("one state draws a whole circle", () => {

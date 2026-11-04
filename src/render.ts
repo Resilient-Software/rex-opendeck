@@ -183,6 +183,9 @@ function summaryFooter(counts: Counts, opt: SummaryOpts): string {
 		const when = countdown(counts.nextAt, opt.now ?? Date.now()).replace(/^IN /, "");
 		return footerRow([{ glyph: counts.loop ? "loop" : "clock", text: when }], 124, COL_MAUVE);
 	}
+	if (counts.idle) {
+		return text(72, 132, `${counts.idle} IDLE`, 13, COL_SUBTEXT, 400);
+	}
 	return text(72, 132, counts.total ? "ALL BUSY" : "NO AGENTS", 13, COL_SUBTEXT, 400);
 }
 
