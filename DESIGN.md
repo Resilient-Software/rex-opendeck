@@ -215,7 +215,7 @@ The New Rex Session key renders as a green `+` with `NEW SESSION` below; it dims
 
 - Every key acts exactly once on key-up. Holding it must not create a second action, and a key-up without a preceding key-down is ignored.
 - Pager keys move one page in their direction. Do not auto-repeat or wrap at either end.
-- Key-down adds immediate pressed feedback. After a focus request, render `FOCUSING…` in the footer until the snapshot confirms it (the background does not turn green until confirmed). On command failure, render `FAILED · TRY AGAIN` in red for one second, then restore live state. Do not use the host's generic alert overlay.
+- Key-down adds immediate pressed feedback. After a focus request, render `FOCUSING…` in the footer until the snapshot confirms it (the background does not turn green until confirmed). On command failure, render `FAILED · TRY AGAIN` for one second, in red on a dark field and dark on a light one, then restore live state. Do not use the host's generic alert overlay.
 - The app is raised only after it has answered, so a stopped app is never launched by a press.
 - Keep gesture state per key context; cancel timers on disappearance or disconnect.
 

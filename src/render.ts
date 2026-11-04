@@ -88,7 +88,8 @@ export function spaceTile(space: Workspace, info: GitInfo, opt: TileOpts): strin
 	if (!footer && !items.length && plain && !opt.dim) {
 		footer = space.status_word ?? (space.agent_status || "unknown").toUpperCase();
 	}
-	const footerColor = opt.footerRed ? COL_RED : sub;
+	// Red disappears on the red field and is hard to read on the other light ones.
+	const footerColor = opt.footerRed && foreground === COL_TEXT ? COL_RED : sub;
 
 	let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144">`;
 	if (background !== COL_BG) {

@@ -116,9 +116,9 @@ export class FakeApp extends EventEmitter {
 	clientId = null;
 	selects = [];
 
-	constructor({ socket, label = "fake-mac", name = "Rex.app", version = "0.0.0-fake", platform = "macos", selectDelayMs = 150, ghost = false, size = null }) {
+	constructor({ socket, label = "fake-mac", kind = "app", name = "Rex.app", version = "0.0.0-fake", platform = "macos", selectDelayMs = 150, ghost = false, size = null }) {
 		super();
-		this.#options = { socket, label, name, version, platform, selectDelayMs, ghost, size };
+		this.#options = { socket, label, kind, name, version, platform, selectDelayMs, ghost, size };
 	}
 
 	get visible() {
@@ -130,10 +130,10 @@ export class FakeApp extends EventEmitter {
 	}
 
 	async start() {
-		const { socket, label, name, version, platform, ghost } = this.#options;
+		const { socket, label, kind, name, version, platform, ghost } = this.#options;
 		this.#conn = new Connection(
 			socket,
-			{ kind: "app", platform, name, version, label },
+			{ kind, platform, name, version, label },
 			(event) => this.#onEvent(event),
 			(code, reason) => {
 				clearTimeout(this.#timer);

@@ -66,6 +66,18 @@ describe("Rex wording", () => {
 		expect(svg(errored)).toContain(">ERROR<");
 		expect(svg(spaceTile(space({ agent_status: "done" }), { repo: "", branch: "" }, { now: NOW }))).toContain(">DONE<");
 	});
+
+	test("a failure footer stays readable on every field", () => {
+		const failed = { footer: "FAILED · TRY AGAIN", footerRed: true, now: NOW };
+		const fill = (overrides: Partial<Workspace>) =>
+			/fill="(#[0-9a-f]{6})"[^>]*>FAILED/.exec(svg(spaceTile(space(overrides), { repo: "", branch: "" }, failed)))?.[1];
+		expect(fill({ agent_status: "idle" })).toBe("#f38ba8");
+		expect(fill({ agent_status: "blocked" })).toBe("#313244");
+		expect(fill({ agent_status: "working" })).toBe("#313244");
+		expect(fill({ focused: true })).toBe("#313244");
+		expect(fill({ tokens: { rsact_v: "1", rsact_state: "subagents", rsact_subagents: "1" } })).toBe("#313244");
+		expect(fill({ tokens: { rsact_v: "1", rsact_state: "scheduled", rsact_next_at: new Date(NOW + 60_000).toISOString() } })).toBe("#f38ba8");
+	});
 });
 
 describe("summaryTile", () => {

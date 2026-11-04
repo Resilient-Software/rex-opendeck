@@ -116,11 +116,20 @@ CI runs lint, typecheck, unit tests and the build.
 `npm run e2e` runs locally because it needs a Rex binary. It runs the built
 plugin against a fake Stream Deck host, a throwaway sandbox Rex server and a
 fake Mac app client, never your own sessions, presses keys the way a user would
-and checks what reaches the sandbox's panes. It compiles a small stand-in agent
-with `cc`. `REX_BIN` picks the rex binary (default: `rex` on `PATH`).
-`E2E_ACTIVITY=0` runs it without any `rsact/*` records, as the deck looks when
-the companion is not installed. Key images, boards (PNG via `rsvg-convert`) and
-`summary.json` land in `e2e-out/`.
+and checks what reaches the sandbox's panes, byte for byte. It compiles a small
+stand-in agent with `cc`, and refuses to start unless the plugin's `REX_SERVER`
+names the run's own temp socket. It takes about three minutes.
+
+- `REX_BIN` picks the rex binary (default: `rex` on `PATH`).
+- `E2E_ACTIVITY=0` runs it without any `rsact/*` records, as the deck looks when
+  the companion is not installed.
+- `E2E_TMP` is where the temp root goes (default `/tmp`). The socket path must
+  fit in 103 bytes.
+- `E2E_OUT` moves the artifacts; `E2E_SKIP` skips phases by name; `E2E_NODE` and
+  `E2E_PLUGIN` pick the plugin's Node and the bundle to test.
+
+Key images, boards (PNG via `rsvg-convert`), the frames both ways, the sandbox's
+event stream and `summary.json` land in `e2e-out/`.
 
 `sh scripts/render-sheet.sh` renders every key image variant into contact
 sheets at real key size under `dist/sheet/`.
