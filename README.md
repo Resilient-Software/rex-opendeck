@@ -3,8 +3,12 @@
 Mirror your [Rex](https://www.superlogical.com/rex/docs) sessions onto a Stream
 Deck and drive your coding agents from it.
 TypeScript on the official [Stream Deck SDK](https://docs.elgato.com/streamdeck/sdk);
-runs in both the Elgato Stream Deck app and
+built for the Elgato Stream Deck app and
 [OpenDeck](https://github.com/nekename/OpenDeck).
+
+**Status: early.** Tested against a Rex server of API revision 10, with a stand-in
+for the Mac app and a fake Stream Deck host. It has not yet been run on a physical
+deck.
 
 Free to use. Apache-2.0. Not an official Rex or Elgato product.
 
@@ -37,7 +41,9 @@ the next value of a cycle to the agent you are focused on, or to a session you
 pin the key to, and show that target on the key (`> api-server`, `#2 webapp`).
 They check first and do not type into an agent that reports it is waiting at a
 permission prompt; Send Keys still goes through, so its default `esc` can
-interrupt or dismiss.
+interrupt or dismiss. Only Claude Code's reports have been checked. An agent that
+reports nothing reads `UNKNOWN`, and these keys type into whatever it is showing,
+where Enter can accept a permission prompt's default.
 
 See [DESIGN.md](DESIGN.md) for the full UX.
 
@@ -75,9 +81,10 @@ sh scripts/install.sh
 
 builds the bundle and installs it into OpenDeck's plugins directory,
 recording the `rex` CLI path for the plugin to use. For the official
-Elgato Stream Deck app, use `sh scripts/install-elgato.sh` instead — the
-same bundle works in both hosts. `sh scripts/pack.sh` produces a
-`.streamDeckPlugin` installer under `dist/`; tagged releases publish one.
+Elgato Stream Deck app, use `sh scripts/install-elgato.sh` instead. OpenDeck
+support is carried over from the install scripts and has not been run with this
+plugin. `sh scripts/pack.sh` produces a `.streamDeckPlugin` installer under
+`dist/`; tagged releases publish one.
 
 Restart OpenDeck, then place the "Rex Session" action on the keys you
 want to participate — keys without one of the plugin's actions are never
@@ -93,7 +100,7 @@ them. Configure a control key in its property inspector.
 
 ## Requirements
 
-- Rex with the Mac app. Tested against Rex API revision 10. Knowing which
+- Rex with the Mac app. Knowing which
   session the app is showing rests on undocumented behaviour (see Focus in
   [DESIGN.md](DESIGN.md)), so a Rex update can break the green tile while
   everything else keeps working. The plugin finds the `rex` CLI via `REX_PATH`,
