@@ -542,9 +542,15 @@ describe("sends", () => {
 		for (const kind of ["write", "input", "prompt"]) {
 			expect(script(kind)).toContain('call("session.attach_all", { event_scope = "session" })');
 		}
-		expect(script("write")).toContain("write(text)");
-		expect(script("input")).toMatch(/paste\(\)\nwrite\("\\r"\)/);
-		expect(script("prompt")).toMatch(/paste\(\)\nrex\.sleep\(0\.3\)\nwrite\("\\r"\)/);
+		expect(script("write")).toMatch(/refuse_blocked\(\)\nwrite\(text\)/);
+		expect(script("input")).toMatch(/refuse_blocked\(\)\npaste\(\)\nwrite\("\\r"\)/);
+		expect(script("prompt")).toMatch(/guard\(\)\npaste\(\)\nrex\.sleep\(0\.3\)\nguard\(\)\nwrite\("\\r"\)/);
+	});
+
+	test.each(["input", "write"])("%s reports the guard refusing a blocked agent", async (kind) => {
+		stub.on(kind, { exit: 1, stderr: "Error: agent_blocked\n" });
+		const send = kind === "input" ? bridge.sendInput(PANE, "x") : bridge.sendText(PANE, "x");
+		await expect(send).rejects.toMatchObject({ name: "RexApiError", code: "agent_blocked" });
 	});
 
 	test.each<[string, number, string, string]>([

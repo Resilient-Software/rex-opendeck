@@ -162,17 +162,18 @@ local function refuse_blocked()
 end
 `;
 
+/**
+ * Under a shell at its prompt a blocked record only counts if that shell owns
+ * it: an ownerless one is a leftover, and refusing on it would leave the shell
+ * unusable, but an owned one can be an agent behind a script the snapshot could
+ * not tell from a shell.
+ */
 export const WRITE_SCRIPT = `
-${PASTE_TEXT}
+${GUARD}
+refuse_blocked()
 write(text)
 `;
 
-/**
- * For a pane the deck sees no agent in. Under a shell at its prompt a blocked
- * record only counts if that shell owns it: an ownerless one is a leftover, and
- * refusing on it would leave the shell unusable, but an owned one can be an agent
- * behind a script the snapshot could not tell from a shell.
- */
 export const INPUT_SCRIPT = `
 ${GUARD}
 refuse_blocked()
@@ -182,29 +183,35 @@ write("\\r")
 
 /**
  * Rex does not refuse prompts to a blocked agent, so the check runs here, on
- * the same connection as the paste. A missing root record only means "not
- * ready" for Claude: during its folder-trust dialog there are no records and
- * the default choice exits, and other agents' reporting is unverified.
+ * the same connection as the paste, and again before Enter: an agent working
+ * when the key was pressed can raise a dialog during the pause, and Enter would
+ * answer it. A missing root record only means "not ready" for Claude: during
+ * its folder-trust dialog there are no records and the default choice exits,
+ * and other agents' reporting is unverified.
  */
 export const PROMPT_SCRIPT = `
 ${GUARD}
-local records, foreground, child = inspect()
-if at_prompt(records, foreground, child) then
-  error("agent_not_ready", 0)
-end
-local has_root = false
-for _, record in ipairs(records) do
-  if (record.id or "") == "" then
-    has_root = true
+local function guard()
+  local records, foreground, child = inspect()
+  if at_prompt(records, foreground, child) then
+    error("agent_not_ready", 0)
+  end
+  local has_root = false
+  for _, record in ipairs(records) do
+    if (record.id or "") == "" then
+      has_root = true
+    end
+  end
+  if program(foreground.argv0) == "claude" and not has_root then
+    error("agent_not_ready", 0)
+  end
+  if is_blocked(records, foreground, false) then
+    error("agent_blocked", 0)
   end
 end
-if program(foreground.argv0) == "claude" and not has_root then
-  error("agent_not_ready", 0)
-end
-if is_blocked(records, foreground, false) then
-  error("agent_blocked", 0)
-end
+guard()
 paste()
 rex.sleep(0.3)
+guard()
 write("\\r")
 `;

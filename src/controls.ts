@@ -138,8 +138,8 @@ function failure(err: unknown): Flash {
 
 /**
  * Sends one press. An agent waiting at a permission prompt gets no typed
- * text (the bridge's prompt script also checks, on the sending connection),
- * but Send Keys still goes through so esc can dismiss the prompt.
+ * text (the bridge's scripts also check, on the sending connection), but Send
+ * Keys still goes through so esc can dismiss the prompt.
  */
 export async function pressControl(
 	kind: ControlKind,

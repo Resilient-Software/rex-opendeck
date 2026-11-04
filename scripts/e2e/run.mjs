@@ -1243,6 +1243,34 @@ try {
 		});
 		await sleep(600);
 		report(s.agent, "idle");
+		await sleep(600);
+		setSettings(K.text, { text: "1", submit: false });
+		await withStaleSnapshot(async () => {
+			report(s.agent, "blocked", { kind: "permission" });
+			await sleep(100);
+			const since = mark();
+			await expectBytes("press Enter off is refused on the sending connection too", s.agent, () => host.press(K.text), []);
+			await expectFlash("and the key flashes BLOCKED", K.text, "BLOCKED", since);
+		});
+		setSettings(K.text, DEFAULT_SETTINGS.text);
+		await sleep(600);
+		report(s.agent, "idle");
+		await sleep(1700);
+		const pasted = (await chunks(s.agent)).length;
+		const racedAt = mark();
+		await expectBytes(
+			"blocked in the pause before Enter: the paste landed, Enter is not sent",
+			s.agent,
+			async () => {
+				await host.press(K.text);
+				await eventually(async () => (await chunks(s.agent)).length > pasted, 2000, 5);
+				report(s.agent, "blocked", { kind: "permission" });
+			},
+			[bracketed("go ahead")],
+		);
+		await expectFlash("and the key flashes BLOCKED", K.text, "BLOCKED", racedAt);
+		await sleep(600);
+		report(s.agent, "idle");
 		report(s.agent, "blocked", { id: "agent_a" });
 		await sleep(700);
 		await expectBytes("a blocked subagent also blocks typing", s.agent, () => host.press(K.text), []);

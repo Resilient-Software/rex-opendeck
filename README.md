@@ -35,8 +35,9 @@ pane with Rex in front, then `IDLE`, or `UNKNOWN` if the agent has since gone.
 **Drive agents.** Control keys send a slash command, a phrase, key presses or
 the next value of a cycle to the agent you are focused on, or to a session you
 pin the key to, and show that target on the key (`> api-server`, `#2 webapp`).
-They never type into an agent waiting at a permission prompt; Send Keys still
-goes through, so its default `esc` can interrupt or dismiss.
+They check first and do not type into an agent that reports it is waiting at a
+permission prompt; Send Keys still goes through, so its default `esc` can
+interrupt or dismiss.
 
 See [DESIGN.md](DESIGN.md) for the full UX.
 
