@@ -1071,6 +1071,10 @@ try {
 			report(s.scratch, "idle", { id: "rsact/bg/two" });
 			await scratchShows("a malformed next and a non-working bg count for nothing", COLORS.plain, "", (svg) => footer(svg) === "IDLE");
 			clearRecords(s.scratch, "rsact");
+			report(s.scratch, "working", { id: "rsact/foo/x" });
+			await settle();
+			check("a kind the contract does not define counts for nothing", background(tile("scratch")) === COLORS.plain && footer(tile("scratch")) === "IDLE", describe(tile("scratch")));
+			clearRecords(s.scratch, "rsact");
 			report(s.scratch, "idle", { id: "rsact/next/99999999999999" });
 			await scratchShows("a next time past what a Date holds counts for nothing", COLORS.plain, "", (svg) => footer(svg) === "IDLE");
 			report(s.scratch, "working");

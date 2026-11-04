@@ -93,7 +93,7 @@ A child record counts as a native subagent when its id has no `rsact/` prefix, i
 - It never overrides focused, blocked or working; on those tiles the activity appears in the footer only.
 - An idle session whose agents still have subagents or background tasks running is not finished, so it gets its own blue field.
 - An idle session whose only activity is a scheduled check is waiting on a timer, not finished, so it gets a near-black mauve field with a mauve countdown footer; the countdown is computed locally and repainted every 15 s. A next time in the past reads `NOW`, and one past what a date can hold counts for nothing: any bytes reaching a terminal can set a record.
-- **Fail open:** without child records, or with unknown ids, tiles render exactly as described above. `rsact/*` records on a pane with no agent are SIGKILL leftovers and are ignored, as are those whose `owner.pid` is not the foreground's, so a new agent never shows a dead session's schedule. The companion's hooks report while the agent is in front, so its own records pass.
+- **Fail open:** without child records, or with unknown ids, including an `rsact/` kind not in the table above, tiles render exactly as described above. `rsact/*` records on a pane with no agent are SIGKILL leftovers and are ignored, as are those whose `owner.pid` is not the foreground's, so a new agent never shows a dead session's schedule. The companion's hooks report while the agent is in front, so its own records pass.
 
 The activity footer is a row of pictograms, each followed by its count:
 

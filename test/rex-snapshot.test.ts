@@ -285,6 +285,14 @@ describe("activityCounts", () => {
 		expect(activityCounts([{ id: "rsact/next/99999999999999.loop", state: "idle" }, { id: "rsact/next/1893456000", state: "idle" }])).toMatchObject({ nextAt: 1893456000000, loop: false });
 	});
 
+	test("a kind the contract does not define is ignored, not read as background work", () => {
+		const records: RawRecord[] = [{ state: "done" }, { id: "rsact/foo/x", state: "working" }];
+		expect(activityCounts(records)).toEqual({ subagents: 0, background: 0, monitors: 0, nextAt: null, loop: false });
+		const snap = buildSnapshot({ sessions: [session("s", 1, [block("b", CLAUDE, records)])] });
+		expect(snap.panes[0].tokens).toBeUndefined();
+		expect(snap.workspaces[0].agent_status).toBe("done");
+	});
+
 	test("malformed activity records fail open", () => {
 		const counts = activityCounts([
 			{ id: "rsact/next/soon", state: "idle" },
