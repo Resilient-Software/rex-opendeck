@@ -398,19 +398,9 @@ export class DeckController {
 		if (known && !known.ok) {
 			return;
 		}
-		let cycleValue = "";
-		if (kind === "cycle") {
-			const values = cycleValues(settings.values ?? "");
-			if (values.length === 0) {
-				this.flash(id, { text: "NOT SET", ok: false });
-				return;
-			}
-			const index = (this.cycleIndex.get(id) ?? 0) % values.length;
-			cycleValue = values[index];
-			const next = (index + 1) % values.length;
-			this.cycleIndex.set(id, next);
-			this.persist(id, inst, { ...inst.settings, index: next });
-			this.render();
+		if (kind === "cycle" && cycleValues(settings.values ?? "").length === 0) {
+			this.flash(id, { text: "NOT SET", ok: false });
+			return;
 		}
 		// One send at a time: a prompt's Enter comes about 300 ms after its
 		// text, so overlapping prompts would interleave in the agent's input.
@@ -424,6 +414,7 @@ export class DeckController {
 			if (!target.ok) {
 				return;
 			}
+			const cycleValue = kind === "cycle" ? this.takeCycleValue(id, inst, settings) : "";
 			const flash = await pressControl(kind, settings, target, { bridge: this.bridge, raise: this.raise }, cycleValue);
 			if (!flash.ok) {
 				this.log.info(`${kind} press on ${target.pane.pane_id}: ${flash.text}`);
@@ -609,6 +600,16 @@ export class DeckController {
 		this.pendingSince = Date.now();
 		this.render();
 		void this.focus(workspaceId);
+	}
+
+	private takeCycleValue(id: string, inst: Instance, settings: ControlSettings): string {
+		const values = cycleValues(settings.values ?? "");
+		const index = (this.cycleIndex.get(id) ?? 0) % values.length;
+		const next = (index + 1) % values.length;
+		this.cycleIndex.set(id, next);
+		this.persist(id, inst, { ...inst.settings, index: next });
+		this.render();
+		return values[index];
 	}
 
 	/**

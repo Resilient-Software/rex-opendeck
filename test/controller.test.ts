@@ -393,6 +393,27 @@ describe("a control press right after a session tile", () => {
 		}
 	});
 
+	test("Cycle spends a value only on a press that gets as far as sending", async () => {
+		const d = await withTiles();
+		const key = d.place("y", "cycle", 0, 1, { command: "/model", values: "opus, sonnet" });
+		const asked = d.bridge.focusWorkspace;
+		d.bridge.focusWorkspace = async () => {
+			throw new Error("no app");
+		};
+		d.press("t4");
+		d.press("y");
+		await vi.waitFor(() => expect(key.image).toContain("FAILED"));
+		expect(key.saved).toEqual([]);
+		d.bridge.focusWorkspace = asked;
+		d.press("t4");
+		d.press("y");
+		await settle();
+		d.state.snapshot = focusedOn("w4");
+		await d.controller.refresh();
+		await vi.waitFor(() => expect(sends(d.calls)).toEqual([["promptAgent", "w4:p1", "/model opus"]]));
+		expect(key.saved.at(-1)).toMatchObject({ index: 1 });
+	});
+
 	test("a key pinned elsewhere does not wait", async () => {
 		const d = await withTiles();
 		d.place("c", "text", 0, 1, { text: "go ahead", target: "w1", targetLabel: "api-server" });
