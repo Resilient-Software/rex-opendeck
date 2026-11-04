@@ -10,7 +10,8 @@
  *   E2E_TMP     parent of the temp root (default /tmp); the socket must fit in 103 bytes
  *   E2E_NODE    node binary for the plugin (default: the Elgato app's bundled
  *               Node if installed, else this node)
- *   E2E_OUT     artifact directory (default: e2e-out/)
+ *   E2E_OUT     artifact directory (default: e2e-out/); it must be new, empty, or
+ *               from an earlier run, because a run clears it
  *   E2E_SKIP    comma list of phases to skip; later phases rely on earlier ones
  *   E2E_PLUGIN  .sdPlugin dir to test instead of ./plugin (copied, never modified)
  *   E2E_ACTIVITY=0  publish no rsact/* records: the deck as it looks without the
@@ -30,6 +31,7 @@ import { promisify } from "node:util";
 
 import { FakeApp } from "./fake-app.mjs";
 import { FakeStreamDeck, sleep, STREAM_DECK_15 } from "./fake-streamdeck.mjs";
+import { prepareOutDir } from "./out-dir.mjs";
 import { renderBoard, svgToPng } from "./render-board.mjs";
 import { LEAKY, RexSandbox } from "./rex-sandbox.mjs";
 
@@ -96,10 +98,14 @@ const hex = (text) => Buffer.from(text).toString("hex");
 const bracketed = (text) => `1b5b3230307e${hex(text)}1b5b3230317e`;
 const CR = "0d";
 
-const root = mkdtempSync(join(realpathSync(process.env.E2E_TMP ?? "/tmp"), "rxe-"));
 const out = resolve(process.env.E2E_OUT ?? join(REPO, "e2e-out"));
-rmSync(out, { recursive: true, force: true });
-mkdirSync(out, { recursive: true });
+try {
+	prepareOutDir(out);
+} catch (err) {
+	console.error(String(err?.message ?? err));
+	process.exit(2);
+}
+const root = mkdtempSync(join(realpathSync(process.env.E2E_TMP ?? "/tmp"), "rxe-"));
 process.on("exit", () => rmSync(root, { recursive: true, force: true }));
 
 const results = [];

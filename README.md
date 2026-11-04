@@ -125,8 +125,10 @@ names the run's own temp socket. It takes about three minutes.
   the companion is not installed.
 - `E2E_TMP` is where the temp root goes (default `/tmp`). The socket path must
   fit in 103 bytes.
-- `E2E_OUT` moves the artifacts; `E2E_SKIP` skips phases by name; `E2E_NODE` and
-  `E2E_PLUGIN` pick the plugin's Node and the bundle to test.
+- `E2E_OUT` moves the artifacts. A run clears that folder first, so it refuses
+  one that is not empty unless an earlier run made it.
+- `E2E_SKIP` skips phases by name; `E2E_NODE` and `E2E_PLUGIN` pick the plugin's
+  Node and the bundle to test.
 
 Key images, boards (PNG via `rsvg-convert`), the frames both ways, the sandbox's
 event stream and `summary.json` land in `e2e-out/`.
