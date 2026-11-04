@@ -26,7 +26,7 @@ Example placement on an MK.2 with the top-right key reserved:
 
 - Sessions fill the Rex Session keys row-major, in Rex's own session order, then by ID; keep surviving session IDs in their existing slots between polls so keys do not shuffle unnecessarily.
 - Agent Summary, control keys and New Rex Session may sit anywhere, including between session keys. They are not slots: the grid skips them and fills the next Rex Session key.
-- **The pager is dynamic and takes two keys.** While sessions fit the participating keys there is no pager: every key is a session tile and unused keys are black. With more sessions than keys, the last two keys become `←` and `→` pagers and the remaining keys page through the sessions.
+- **The pager is dynamic and takes two keys.** While sessions fit the participating keys there is no pager: every key is a session tile and unused keys show an inert dot. With more sessions than keys, the last two keys become `←` and `→` pagers and the remaining keys page through the sessions.
 - An external focus change reveals the page containing the newly focused session.
 - None of the actions are available inside multi-actions.
 
@@ -182,7 +182,7 @@ Send Keys uses `rex send-key` with session and block always named; New Tab uses 
 - **Cycle** splits its values on commas or new lines. Each press sends the command and the next value (just the value when the command is empty), then advances, wrapping from the last value to the first. The position is saved in the key's settings, so it survives restarts, and fast presses each send the next value. The key shows what it will send; it does not read back what the agent actually uses.
 - **New Tab** checks the folder first: Rex never validates one and would silently start in the home directory, so a missing, relative or non-directory folder flashes `NO SUCH DIR` and opens nothing.
 
-**Flashes.** After a press the footer shows the result for about a second: green `SENT` or `OPENED`; red `BLOCKED`, `NOT READY` (no agent is the pane's foreground process, or it is not reporting yet), `BAD KEY`, `NO SUCH DIR`, `NOT SET`, `GONE` (the session or pane closed) or `FAILED`. Then the live face returns. Do not use the host's generic alert overlay.
+**Flashes.** After a press the footer shows the result for about a second: green `SENT` or `OPENED`; red `BLOCKED`, `NOT READY` (no agent is the pane's foreground process, or it is not reporting yet), `BAD KEY`, `NO SUCH DIR`, `NOT SET`, `GONE` (the session or pane closed) or `FAILED`. Then the live face returns. Control keys do not use the host's generic alert overlay.
 
 **One send at a time.** Presses are sent in order, each after the previous one finishes: a prompt's Enter comes shortly after its text, so overlapping prompts would interleave in the agent's input.
 
@@ -217,27 +217,27 @@ The New Rex Session key renders as a green `+` with `NEW SESSION` below; it dims
 
 - Every key acts exactly once on key-up. Holding it must not create a second action, and a key-up without a preceding key-down is ignored.
 - Pager keys move one page in their direction. Do not auto-repeat or wrap at either end.
-- Key-down adds immediate pressed feedback. After a focus request, render `FOCUSING…` in the footer until the snapshot confirms it (the background does not turn green until confirmed). On command failure, render `FAILED · TRY AGAIN` for one second, in red on a dark field and dark on a light one, then restore live state. Do not use the host's generic alert overlay.
+- Key-down only records the press; nothing changes on the key until key-up acts. After a focus request, render `FOCUSING…` in the footer until the snapshot confirms it (the background does not turn green until confirmed). On command failure, render `FAILED · TRY AGAIN` for one second, in red on a dark field and dark on a light one, then restore live state. The one use of the host's generic alert overlay is New Rex Session failing, for example with no app connected.
 - The app is raised only after it has answered, so a stopped app is never launched by a press.
 - Keep gesture state per key context; cancel timers on disappearance or disconnect.
 
 ## Overflow and live updates
 
-- Without a pager, all 14 keys are session tiles. With a pager, pages contain 13 sessions.
+- Without a pager, all 14 keys are session tiles. The pager takes two of them, so with one a page holds 12 sessions.
 - A manual page change is view-only and persists until the user focuses an item or the focused ID changes externally.
 - Additions fill the first free position after existing IDs. Removals compact; clamp the page only when its old index no longer exists.
 - Track the server with a long-lived `rex events --all --json` child. Whitelisted events trigger a debounced snapshot refresh (75 ms coalesce, at most one refresh per 300 ms), with a 5 s reconciliation poll while the stream is live, because a hung server keeps the stream alive and silent. `program_status_changed` is dropped when a record's state and kind have not changed, and `process_changed` when the pane's agent (and that agent's pid), folder and derived status have not, because a busy shell fires about seven a second. Everything else, including `pwd_changed` and every connection's `client_joined`, is ignored.
 - The stream counts as up once its child has stayed alive 250 ms. It exits when the server goes away and never reconnects, so without it fall back to polling the snapshot at 1 Hz and restart it with exponential backoff (1 s doubling to a 15 s cap; reset on success). Redraw only keys whose image model changed in either mode.
 - Every CLI call passes `--autostart=false`, because the default would launch a server, and one-shot calls pass `--timeout 2s`, below the 2.5 s kill, so rex reports the failure itself.
 - A snapshot failure counts toward offline; a failed press does not.
-- The pager, when present, always occupies the bottom-right key; never reinterpret a session tile as navigation.
+- The pager, when present, always takes the last two Rex Session keys, wherever those sit; never reinterpret any other session tile as navigation.
 - Countdowns on session tiles and the summary repaint every 15 s.
 
 ## Empty, loading, and offline states
 
-- **Starting:** top-left shows `REX · CONNECTING`; every other usable key is black. The summary shows `CONNECTING` and control keys are dim; both are inert until the first snapshot.
-- **Online, no sessions:** top-left shows `NO SESSIONS · OPEN REX`; all other data keys are black and pagers show `0`.
-- **Unused positions:** fully black and inert; do not show fake slot numbers or plus buttons.
+- **Starting:** top-left shows `REX · CONNECTING`; every other session key shows an inert dot. The summary shows `CONNECTING` and control keys are dim; both are inert until the first snapshot.
+- **Online, no sessions:** top-left shows `NO SESSIONS · OPEN REX`; the other session keys show an inert dot, and there are no pagers.
+- **Unused positions:** an inert dot on black; do not show fake slot numbers or plus buttons.
 - **Transient poll failure:** keep the last good frame for two failed polls to avoid flicker.
 - **Offline after three failures:** freeze and dim last-known labels on plain backgrounds, disable all focus and page actions, and show `REX OFFLINE` in red text on the top-left key. Summary and control keys dim and go inert, presses send nothing, and the summary does not keep showing stale counts. Recover automatically on the next valid snapshot.
 
