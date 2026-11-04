@@ -142,6 +142,15 @@ function isRoot(record: RawRecord): boolean {
 	return !record.id;
 }
 
+/**
+ * Rex credits a report to whichever process is in front at the time and keeps
+ * that pid, so a record naming another pid comes from something now gone or
+ * behind. An ownerless record could be anyone's.
+ */
+function isLeftover(record: RawRecord, foreground: RawForeground | null | undefined): boolean {
+	return record.owner?.pid !== undefined && record.owner.pid !== foreground?.pid;
+}
+
 function ownRecord(foreground: RawForeground, records: readonly RawRecord[]): RawRecord | undefined {
 	return records.find((record) => !isActivityRecord(record) && record.owner?.pid !== undefined && record.owner.pid === foreground.pid);
 }
@@ -201,8 +210,9 @@ export type PaneStatus = { status: AgentStatus; error: boolean };
 /**
  * Rex keeps `done` until the next prompt, whether or not anyone looked, so a
  * root the user has seen reads as idle, or as unknown with no agent left to be
- * idle. Under a shell only a finished root means anything: every other record
- * is a leftover from a program now gone.
+ * idle. With no agent in front only a finished root outlives its owner: under a
+ * shell every other record is ignored, and under another program so is any other
+ * leftover. A new agent starts clean, so a leftover root says nothing about it.
  */
 export function paneStatus(block: RawBlock, seenAt: string | undefined): PaneStatus {
 	const all = list<RawRecord>(block.records);
@@ -216,13 +226,17 @@ export function paneStatus(block: RawBlock, seenAt: string | undefined): PaneSta
 	if (isAtPrompt(block.foreground, all, block.child)) {
 		return isFinished(root) ? finished() : { status: "unknown", error: false };
 	}
-	if (records.some((record) => record.state === "blocked")) {
+	const current = records.filter((record) => !isLeftover(record, block.foreground));
+	if (current.some((record) => record.state === "blocked")) {
 		return { status: "blocked", error: false };
 	}
-	if (root) {
+	if (root && current.includes(root)) {
 		return isFinished(root) ? finished() : { status: fromState(root.state), error: false };
 	}
-	const urgent = records.map((record) => fromState(record.state)).sort((a, b) => PRIORITY[b] - PRIORITY[a])[0];
+	if (!agent && isFinished(root)) {
+		return finished();
+	}
+	const urgent = current.map((record) => fromState(record.state)).sort((a, b) => PRIORITY[b] - PRIORITY[a])[0];
 	return { status: urgent ?? "unknown", error: false };
 }
 
@@ -359,7 +373,7 @@ export function buildSnapshot(raw: RawSnapshot, { focusedSessionId, seen }: Buil
 				const records = list<RawRecord>(block.records);
 				const result = paneStatus(block, seen?.get(block.block_id));
 				const agent = agentOf(block.foreground, records, block.child);
-				const counts = agent ? activityCounts(records) : undefined;
+				const counts = agent ? activityCounts(records.filter((record) => !isLeftover(record, block.foreground))) : undefined;
 				const tokens = counts && tokensFrom(counts);
 				paneResults.push(result);
 				if (counts) {

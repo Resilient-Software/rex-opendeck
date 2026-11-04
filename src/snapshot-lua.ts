@@ -187,7 +187,8 @@ write("\\r")
  * when the key was pressed can raise a dialog during the pause, and Enter would
  * answer it. A missing root record only means "not ready" for Claude: during
  * its folder-trust dialog there are no records and the default choice exits,
- * and other agents' reporting is unverified.
+ * and other agents' reporting is unverified. A root naming another pid is a
+ * killed predecessor's, and says nothing about this one.
  */
 export const PROMPT_SCRIPT = `
 ${GUARD}
@@ -198,7 +199,8 @@ local function guard()
   end
   local has_root = false
   for _, record in ipairs(records) do
-    if (record.id or "") == "" then
+    local owner = owner_pid(record)
+    if (record.id or "") == "" and (owner == nil or owner == foreground.pid) then
       has_root = true
     end
   end

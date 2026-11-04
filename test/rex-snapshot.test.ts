@@ -188,6 +188,57 @@ describe("paneStatus", () => {
 	});
 });
 
+describe("records from a process no longer in front", () => {
+	const DEAD = { owner: { pid: 99 } };
+	const TAIL = { pid: 50, argv0: "tail", name: "tail" };
+	const raw = (foreground: RawBlock["foreground"], records: RawRecord[]) => ({ sessions: [session("s", 1, [block("b", foreground, records)])] });
+
+	test.each<[string, RawBlock["foreground"], RawRecord[], string]>([
+		["a program does not inherit a dead agent's idle", TAIL, [{ state: "idle", ...DEAD }], "unknown"],
+		["or its working", TAIL, [{ state: "working", ...DEAD }], "unknown"],
+		["or a child", TAIL, [{ id: "a", state: "working", ...DEAD }], "unknown"],
+		["or a blocked record", TAIL, [{ state: "blocked", ...DEAD }], "unknown"],
+		["a dead agent's done still waits to be seen", TAIL, [{ state: "done", ...DEAD }], "done"],
+		["its own report still counts", TAIL, [{ state: "working", owner: { pid: 50 } }], "working"],
+		["an ownerless record stays as it was", TAIL, [{ state: "working" }], "working"],
+		["a new agent is not its predecessor's idle", CLAUDE, [{ state: "idle", ...DEAD }], "unknown"],
+		["or its done", CLAUDE, [{ state: "done", ...DEAD }], "unknown"],
+		["or its error", CLAUDE, [{ state: "error", ...DEAD }], "unknown"],
+		["a new agent's own report wins", CLAUDE, [{ state: "working", owner: { pid: 10 } }], "working"],
+		["a live child still counts beside a dead root", CLAUDE, [{ state: "done", ...DEAD }, { id: "a", state: "working", owner: { pid: 10 } }], "working"],
+	])("%s", (_name, foreground, records, expected) => {
+		expect(statusOf(foreground, records).status).toBe(expected);
+	});
+
+	test("a program under a dead agent's seen done reads unknown", () => {
+		expect(statusOf(TAIL, [{ state: "done", updated_at: "t1", ...DEAD }], "t1").status).toBe("unknown");
+	});
+
+	test("the summary does not count that program", () => {
+		const snap = buildSnapshot(raw(TAIL, [{ state: "idle", ...DEAD }]));
+		expect(snap.panes[0].agent).toBeUndefined();
+		expect(spaceState(snap.workspaces[0], snap)).toBe("none");
+	});
+
+	test("a new agent shows neither a dead session's schedule nor its background work", () => {
+		const gemini = { pid: 60, argv0: "gemini" };
+		const leftovers: RawRecord[] = [
+			{ id: "rsact/next/1893456000.loop", state: "idle", ...DEAD },
+			{ id: "rsact/bg/1", state: "working", ...DEAD },
+			{ id: "rsact/sub/1", state: "working", ...DEAD },
+		];
+		const snap = buildSnapshot(raw(gemini, [...leftovers, { state: "done", app: "gemini", owner: { pid: 60 } }]));
+		expect(snap.panes[0].tokens).toBeUndefined();
+		expect(snap.workspaces[0].tokens).toBeUndefined();
+		expect(spaceState(snap.workspaces[0], snap)).toBe("done");
+	});
+
+	test("records the agent itself published count, as do ownerless ones", () => {
+		const records: RawRecord[] = [{ id: "rsact/next/1893456000.loop", state: "idle", owner: { pid: 10 } }, { id: "rsact/bg/1", state: "working" }];
+		expect(buildSnapshot(raw(CLAUDE, records)).panes[0].tokens).toMatchObject({ rsact_background: "1", rsact_next_at: new Date(1893456000000).toISOString() });
+	});
+});
+
 describe("activityCounts", () => {
 	test("native subagents and rsact/sub union by last id segment", () => {
 		const counts = activityCounts([

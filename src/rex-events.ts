@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 
 import { classifyRexError, RexApiError } from "./rex-errors";
 import type { SizeChange } from "./rex-focus";
-import { agentOf, list, type RawBlock, type RawForeground } from "./rex-snapshot";
+import { agentOf, type AgentStatus, list, paneStatus, type RawBlock, type RawForeground } from "./rex-snapshot";
 
 const ALIVE_MS = 250;
 
@@ -52,7 +52,7 @@ export type ChangeHandlers = {
 
 /** Per-block signatures, so a repeated status or a busy shell triggers nothing. */
 export class ChangeFilter {
-	private readonly process = new Map<string, { agent: string; cwd: string }>();
+	private readonly process = new Map<string, { agent: string; cwd: string; status: AgentStatus }>();
 	private readonly status = new Map<string, string>();
 
 	constructor(
@@ -99,9 +99,15 @@ export class ChangeFilter {
 		const previous = this.process.get(blockId);
 		// A foreground can be absent, or a root login with no cwd, during startup.
 		const { child, records } = this.blockOf(blockId);
-		const next = { agent: agentOf(foreground, list(records), child) ?? "", cwd: foreground?.cwd ?? previous?.cwd ?? "" };
+		const agent = agentOf(foreground, list(records), child);
+		const next = {
+			// The pid only for an agent: a new one means its predecessor's records stop counting, and a busy shell's changes constantly.
+			agent: agent ? `${agent} ${foreground?.pid}` : "",
+			cwd: foreground?.cwd ?? previous?.cwd ?? "",
+			status: paneStatus({ block_id: blockId, foreground, records, child }, undefined).status,
+		};
 		this.process.set(blockId, next);
-		return previous?.agent !== next.agent || previous.cwd !== next.cwd;
+		return previous?.agent !== next.agent || previous.cwd !== next.cwd || previous.status !== next.status;
 	}
 
 	private statusChanged(blockId: string, payload: NonNullable<BlockPayload["payload"]>): boolean {

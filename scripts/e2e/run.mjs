@@ -198,6 +198,8 @@ const CLAUDE = join(agentBin, "claude");
 const TOOL = join(agentBin, "tool");
 execFileSync("cc", ["-O2", "-w", "-o", CLAUDE, join(HERE, "fake-agent.c")]);
 cpSync(CLAUDE, TOOL);
+const GEMINI = join(agentBin, "gemini");
+cpSync(CLAUDE, GEMINI);
 // A script that does not exec: it stays the foreground, with the agent as its child.
 const WRAPPER = join(agentBin, "wrapped-agent");
 writeFileSync(WRAPPER, `#!/bin/sh\nexport ACCOUNT=work\n${CLAUDE} "$@"\n`);
@@ -943,6 +945,16 @@ try {
 		await focusOn(s.docs);
 		await expectSoon("once seen, that shell reads UNKNOWN, not IDLE", () => footer(tile("left")) === "UNKNOWN", { timeoutMs: 2000, instead: () => describe(tile("left")) });
 		await expectSoon("and the summary stops counting it", () => Number(words(svgOf(K.summary))[0]) === counted - 1, { timeoutMs: 1000, instead: () => words(svgOf(K.summary)).join(" | ") });
+		pid = await startAgent();
+		report(left, "idle");
+		await expectSoon("a third run: idle", () => footer(tile("left")) === "IDLE", { timeoutMs: 2000, instead: () => describe(tile("left")) });
+		process.kill(pid, "SIGKILL");
+		await eventually(async () => argv0Base((await processOf(left)).foreground) === "sh", 3000, 100);
+		await sandbox.rex("send", "-s", left.session, "-b", left.block, `${TOOL} left\r`);
+		await attachTty(left, ["tool"]);
+		const polled = snapshotCount();
+		await eventually(() => snapshotCount() > polled + 1, 12000);
+		check("a program that is not an agent does not inherit the dead agent's idle", footer(tile("left")) === "UNKNOWN", describe(tile("left")));
 		await closeSession(left);
 
 		clearRecords(s.agent);
@@ -1063,6 +1075,22 @@ try {
 			await scratchShows("and snapshots go on working", COLORS.working, "");
 			report(s.scratch, "idle");
 			clearRecords(s.scratch, "rsact");
+
+			const leftover = await newShell("leftover", plainDir);
+			await sandbox.rex("send", "-s", leftover.session, "-b", leftover.block, `${CLAUDE} leftover\r`);
+			await attachTty(leftover, ["claude"]);
+			const killed = (await processOf(leftover)).foreground.pid;
+			report(leftover, "idle");
+			report(leftover, "idle", { id: `rsact/next/${inFuture(39)}.loop` });
+			await expectSoon("a pending schedule: mauve", () => background(tile("leftover")) === COLORS.scheduled, { timeoutMs: 2000, instead: () => describe(tile("leftover")) });
+			process.kill(killed, "SIGKILL");
+			await eventually(async () => argv0Base((await processOf(leftover)).foreground) === "sh", 3000, 100);
+			await sandbox.rex("send", "-s", leftover.session, "-b", leftover.block, `${GEMINI} leftover\r`);
+			await attachTty(leftover, ["gemini"]);
+			await expectSoon("a new agent with no hooks does not show the dead one's schedule", () => background(tile("leftover")) === COLORS.plain && footer(tile("leftover")) === "UNKNOWN", { timeoutMs: 2000, instead: () => describe(tile("leftover")) });
+			report(leftover, "done", { app: "gemini" });
+			await expectSoon("and its own done reads DONE", () => footer(tile("leftover")) === "DONE", { timeoutMs: 2000, instead: () => describe(tile("leftover")) });
+			await closeSession(leftover);
 
 			await focusOn(s.docs);
 			const totalBefore = words(svgOf(K.summary))[0];
@@ -1291,6 +1319,26 @@ try {
 		await sleep(1600);
 		await expectBytes("once it reports, typing works", fresh, () => host.press(K.text), [bracketed("go ahead"), CR]);
 		await closeSession(fresh);
+
+		const again = await newShell("again", plainDir);
+		await sandbox.rex("send", "-s", again.session, "-b", again.block, `${CLAUDE} again bp\r`);
+		await attachTty(again, ["claude"]);
+		const predecessor = (await processOf(again)).foreground.pid;
+		report(again, "done");
+		await expectSoon("a Claude reports done", () => footer(tile("again")) === "DONE", { timeoutMs: 2000, instead: () => describe(tile("again")) });
+		process.kill(predecessor, "SIGKILL");
+		await eventually(async () => argv0Base((await processOf(again)).foreground) === "sh", 3000, 100);
+		await sandbox.rex("send", "-s", again.session, "-b", again.block, `${CLAUDE} again bp\r`);
+		await attachTty(again, ["claude"]);
+		await expectSoon("killed and started again, its tile does not read the old done", () => footer(tile("again")) === "UNKNOWN", { timeoutMs: 2000, instead: () => describe(tile("again")) });
+		await focusOn(again);
+		since = mark();
+		await expectBytes("a leftover root does not satisfy the guard for the next Claude", again, () => host.press(K.text), []);
+		await expectFlash("the key flashes NOT READY", K.text, "NOT READY", since);
+		report(again, "idle");
+		await sleep(1600);
+		await expectBytes("once it reports, typing works", again, () => host.press(K.text), [bracketed("go ahead"), CR]);
+		await closeSession(again);
 
 		const shell = await newShell("gone", plainDir);
 		await sandbox.rex("send", "-s", shell.session, "-b", shell.block, `${CLAUDE} gone\r`);

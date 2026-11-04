@@ -136,6 +136,42 @@ describe("process_changed churn", () => {
 	});
 });
 
+describe("process_changed and what the pane reads", () => {
+	const process = (foreground: unknown) => event.block(S, B, "process_changed", { generation: Math.random(), foreground });
+	const SHELL = { pid: 1, argv0: "-zsh", cwd: "/work" };
+	const TAIL = { pid: 2, argv0: "tail", cwd: "/work" };
+
+	test("a record that means something only away from a shell flips the tile at once", () => {
+		const { send } = filter(() => [{ state: "working" }]);
+		send(process(SHELL));
+		expect(send(process(TAIL))).toBe(1);
+		expect(send(process(SHELL))).toBe(1);
+	});
+
+	test("a dead agent's idle reads the same everywhere, so a busy shell stays quiet", () => {
+		const { send } = filter(() => [{ state: "idle", owner: { pid: 99 } }]);
+		send(process(SHELL));
+		for (const pid of [2, 3, 4]) {
+			expect(send(process({ ...TAIL, pid }))).toBe(0);
+			expect(send(process(SHELL))).toBe(0);
+		}
+	});
+
+	test("the same agent replaced by a new process passes, since its records stop counting", () => {
+		const { send } = filter(() => [{ state: "done", owner: { pid: 7 } }]);
+		send(process({ pid: 7, argv0: "claude", cwd: "/work" }));
+		expect(send(process({ pid: 7, argv0: "claude", cwd: "/work" }))).toBe(0);
+		expect(send(process({ pid: 8, argv0: "claude", cwd: "/work" }))).toBe(1);
+	});
+
+	test("a dead agent's done too", () => {
+		const { send } = filter(() => [{ state: "done", owner: { pid: 99 } }]);
+		send(process(SHELL));
+		expect(send(process(TAIL))).toBe(0);
+		expect(send(process(SHELL))).toBe(0);
+	});
+});
+
 describe("size_changed", () => {
 	test("hands focus the session, owner and principal", () => {
 		const { send, sizes } = filter();
