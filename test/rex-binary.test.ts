@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 
@@ -8,7 +9,7 @@ const BUNDLE = "/work/plugin";
 const RECORD = join(BUNDLE, "rex-path.txt");
 const VERSIONS = `${HOME}/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS/rex`;
 
-function host(present: string[], options: { env?: NodeJS.ProcessEnv; recorded?: string; processes?: Error | string[] } = {}): BinaryEnvironment {
+function host(present: string[], options: { env?: NodeJS.ProcessEnv; recorded?: string } = {}): BinaryEnvironment {
 	return {
 		env: options.env ?? {},
 		home: HOME,
@@ -19,12 +20,6 @@ function host(present: string[], options: { env?: NodeJS.ProcessEnv; recorded?: 
 				return options.recorded;
 			}
 			throw new Error("ENOENT");
-		},
-		processNames: async () => {
-			if (options.processes instanceof Error) {
-				throw options.processes;
-			}
-			return options.processes ?? [];
 		},
 	};
 }
@@ -61,18 +56,12 @@ describe("resolveBinary", () => {
 		await expect(resolveBinary(host(["/undefined/rex", "/usr/bin/rex"]))).resolves.toBe("/usr/bin/rex");
 	});
 
-	test("a running process matches on the whole line's basename, spaces included", async () => {
-		const running = "/work/Application Support/Rex Server.app/Contents/MacOS/rex";
-		const processes = ["  /usr/libexec/rexd", "/usr/bin/grep", "rex", `${running}  `, "/work/other/rex-helper"];
-		await expect(resolveBinary(host([running], { processes }))).resolves.toBe(running);
-	});
-
-	test("a listed process whose file has gone is skipped", async () => {
-		await expect(resolveBinary(host([], { processes: ["/work/gone/rex"] }))).resolves.toBe("rex");
-	});
-
-	test("falls back to bare rex, also when ps is unavailable", async () => {
+	test("falls back to bare rex", async () => {
 		await expect(resolveBinary(host([]))).resolves.toBe("rex");
-		await expect(resolveBinary(host([], { processes: new Error("spawn ENOENT") }))).resolves.toBe("rex");
+	});
+
+	test("nothing that merely happens to be running is ever chosen", async () => {
+		const source = readFileSync(new URL("../src/rex-binary.ts", import.meta.url), "utf8");
+		expect(source).not.toMatch(/\bps\b.*-ax|node:child_process/);
 	});
 });

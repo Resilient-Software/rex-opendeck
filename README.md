@@ -97,8 +97,7 @@ them. Configure a control key in its property inspector.
   session the app is showing rests on undocumented behaviour (see Focus in
   [DESIGN.md](DESIGN.md)), so a Rex update can break the green tile while
   everything else keeps working. The plugin finds the `rex` CLI via `REX_PATH`,
-  the recorded install path, the official install locations, or a running rex
-  process
+  the recorded install path or the official install locations
 - Elgato Stream Deck 7.1+, or OpenDeck 2.14+ with Node.js 24+ installed
 - macOS. The Elgato app also runs on Windows, but the plugin has not been tested there
 - Node.js 24+ and npm to build

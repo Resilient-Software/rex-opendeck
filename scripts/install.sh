@@ -19,7 +19,7 @@ mkdir -p "$target"
 cp -R "$repo/plugin/manifest.json" "$repo/plugin/icons" "$repo/plugin/bin" "$repo/plugin/ui" "$target/"
 
 # Record where rex lives, since the host may run with a minimal PATH; the
-# plugin also probes the official install locations and ps on its own.
+# plugin also probes the official install locations on its own.
 rm -f "$target/rex-path.txt"
 command -v rex > "$target/rex-path.txt" 2>/dev/null || rm -f "$target/rex-path.txt"
 
