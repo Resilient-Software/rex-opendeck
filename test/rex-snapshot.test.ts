@@ -456,6 +456,15 @@ describe("buildSnapshot", () => {
 			expect(snap.panes[0].tokens?.rsact_state).toBe("background");
 		});
 
+		test("the session's loop glyph goes with the soonest wake-up, not with any pane's", () => {
+			const panes = (first: string, second: string) => buildSnapshot({
+				sessions: [session("s", 1, [block("b0", CLAUDE, [{ id: first, state: "idle" }]), block("b1", CLAUDE, [{ id: second, state: "idle" }])])],
+			}).workspaces[0].tokens;
+			expect(panes("rsact/next/1900000000", "rsact/next/2000000000.loop")).toEqual({ rsact_v: "1", rsact_state: "scheduled", rsact_next_at: new Date(1900000000000).toISOString() });
+			expect(panes("rsact/next/2000000000.loop", "rsact/next/1900000000")).toEqual({ rsact_v: "1", rsact_state: "scheduled", rsact_next_at: new Date(1900000000000).toISOString() });
+			expect(panes("rsact/next/1900000000.loop", "rsact/next/2000000000")).toMatchObject({ rsact_next_at: new Date(1900000000000).toISOString(), rsact_loop: "1" });
+		});
+
 		test("a lone wake-up is scheduled", () => {
 			const snap = buildSnapshot({ sessions: [session("s", 1, [block("b0", CLAUDE, [{ id: "rsact/next/1900000000.loop", state: "idle" }])])] });
 			expect(snap.panes[0].tokens).toMatchObject({ rsact_state: "scheduled", rsact_loop: "1" });

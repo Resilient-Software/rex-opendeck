@@ -330,9 +330,9 @@ function mergeCounts(all: readonly ActivityCounts[]): ActivityCounts {
 		merged.subagents += counts.subagents;
 		merged.background += counts.background;
 		merged.monitors += counts.monitors;
-		merged.loop ||= counts.loop;
 		if (counts.nextAt !== null && (merged.nextAt === null || counts.nextAt < merged.nextAt)) {
 			merged.nextAt = counts.nextAt;
+			merged.loop = counts.loop;
 		}
 	}
 	return merged;
