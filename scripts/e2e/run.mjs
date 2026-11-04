@@ -1102,6 +1102,7 @@ try {
 			const launch = async () => {
 				await sandbox.rex("send", "-s", relaunched.session, "-b", relaunched.block, `${CLAUDE} relaunched\r`);
 				await attachTty(relaunched, ["claude"]);
+				await sleep(1000);
 				report(relaunched, "idle");
 			};
 			await launch();
