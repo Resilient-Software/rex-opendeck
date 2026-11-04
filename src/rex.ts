@@ -13,7 +13,7 @@ import { classifyRexError, RexApiError } from "./rex-errors";
 import { ChangeFilter, type ChangeStream, startChangeStream } from "./rex-events";
 import { chooseAppClient, FocusTracker, isRexFrontmost, readFocusPreference, REX_BUNDLE_ID, type RexClient } from "./rex-focus";
 import { toRexKey } from "./rex-keys";
-import { buildSnapshot, list, type RawBlock, type RawRecord, type RawSession, type RawSnapshot, type RawWindow, SeenTracker, type Snapshot, type Workspace } from "./rex-snapshot";
+import { buildSnapshot, list, type RawBlock, type RawChild, type RawRecord, type RawSession, type RawSnapshot, type RawWindow, SeenTracker, type Snapshot, type Workspace } from "./rex-snapshot";
 import { CLIENTS_SCRIPT, INPUT_SCRIPT, PROMPT_SCRIPT, SNAPSHOT_SCRIPT, WRITE_SCRIPT } from "./snapshot-lua";
 
 export { resolveBinary } from "./rex-binary";
@@ -60,7 +60,7 @@ function isDirectory(path: string): boolean {
 
 export class Bridge {
 	private binary = "";
-	private readonly blocks = new Map<string, { sessionId: string; records: readonly RawRecord[] }>();
+	private readonly blocks = new Map<string, { sessionId: string; records: readonly RawRecord[]; child?: RawChild }>();
 	private failuresSinceResolve = 0;
 	private readonly focus: FocusTracker;
 	private readonly log: (message: string) => void;
@@ -134,7 +134,7 @@ export class Bridge {
 		const binary = await this.resolved();
 		const filter = new ChangeFilter(
 			{ onChange, onSizeChanged: (change) => this.focus.sizeChanged(change) },
-			(blockId) => this.blocks.get(blockId)?.records ?? [],
+			(blockId) => this.blocks.get(blockId) ?? {},
 		);
 		this.stream = await startChangeStream(binary, [...this.serverArgs(), "events", "--all", "--json"], filter, () => {
 			this.stream = undefined;
@@ -165,7 +165,7 @@ export class Bridge {
 			for (const window of list<RawWindow>(session.windows)) {
 				for (const block of list<RawBlock>(window.blocks)) {
 					if (block.creator_name === "com.superlogical.terminal") {
-						this.blocks.set(block.block_id, { sessionId: session.session_id, records: list<RawRecord>(block.records) });
+						this.blocks.set(block.block_id, { sessionId: session.session_id, records: list<RawRecord>(block.records), child: block.child });
 					}
 				}
 			}

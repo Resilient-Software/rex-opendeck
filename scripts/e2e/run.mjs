@@ -192,6 +192,10 @@ const CLAUDE = join(agentBin, "claude");
 const TOOL = join(agentBin, "tool");
 execFileSync("cc", ["-O2", "-w", "-o", CLAUDE, join(HERE, "fake-agent.c")]);
 cpSync(CLAUDE, TOOL);
+// A script that does not exec: it stays the foreground, with the agent as its child.
+const WRAPPER = join(agentBin, "wrapped-agent");
+writeFileSync(WRAPPER, `#!/bin/sh\nexport ACCOUNT=work\n${CLAUDE} "$@"\n`);
+chmodSync(WRAPPER, 0o755);
 
 const repos = join(root, "repos");
 const gitEnv = { ...process.env, HOME: sandbox.home, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null" };
@@ -1279,6 +1283,64 @@ try {
 			.map((entry) => entry.msg.payload.index);
 		check("Cycle saves its index after each press", indexes.slice(-3).join(",") === "1,2,0", indexes.join(","));
 		await expectFace("Cycle shows the value the next press sends", K.cycle, "opus");
+	});
+
+	await phase("wrapper", async () => {
+		const wrapped = await newShell("wrapped", plainDir);
+		await sandbox.rex("send", "-s", wrapped.session, "-b", wrapped.block, `${WRAPPER} wrapped bp\r`);
+		const leader = await eventually(async () => {
+			const { foreground, child } = await processOf(wrapped);
+			return argv0Base(foreground) === "sh" && foreground.pid !== child?.pid ? foreground : undefined;
+		}, 6000, 50);
+		check("a script that did not exec is the foreground, under the pane's shell", leader, leader?.argv0);
+		await expectSoon("the agent behind it has started", async () => (await screen(wrapped)).includes("READY wrapped"), { everyMs: 100 });
+		await focusOn(s.notes);
+		const total = Number(words(svgOf(K.summary))[0]);
+		report(wrapped, "idle");
+		await expectSoon("its report makes the tile an agent's: IDLE, not UNKNOWN", () => footer(tile("wrapped")) === "IDLE", { timeoutMs: 2000, instead: () => describe(tile("wrapped")) });
+		await expectSoon("and the summary counts it", () => Number(words(svgOf(K.summary))[0]) === total + 1, { timeoutMs: 1000, instead: () => words(svgOf(K.summary)).join(" | ") });
+		report(wrapped, "blocked", { kind: "permission" });
+		await expectSoon("blocked behind a script: the tile turns red", () => background(tile("wrapped")) === COLORS.blocked, { timeoutMs: 2000, instead: () => describe(tile("wrapped")) });
+		await focusOn(wrapped);
+		for (const [name, key] of [["Send Text", K.text], ["Slash Command", K.command], ["Cycle", K.cycle]]) {
+			const since = mark();
+			await expectBytes(`blocked behind a script: ${name} types nothing`, wrapped, () => host.press(key), []);
+			await expectFlash(`and ${name} flashes BLOCKED`, key, "BLOCKED", since);
+		}
+		await expectBytes("blocked behind a script: Send Keys still sends esc", wrapped, () => host.press(K.keys), "1b");
+		report(wrapped, "idle");
+		await sleep(1700);
+		await expectBytes("back to idle, a prompt reaches it through the guard", wrapped, () => host.press(K.text), [bracketed("go ahead"), CR]);
+		await closeSession(wrapped);
+
+		const created = await sandbox.json("new", "firstproc", "--json", "--shell=none", "-c", plainDir, "--", WRAPPER, "firstproc", "bp");
+		const first = await attachTty(paneFrom("firstproc", created, "firstproc"), ["sh"]);
+		await expectSoon("a script as the pane's first process has started its agent", async () => (await screen(first)).includes("READY firstproc"), { everyMs: 100 });
+		report(first, "blocked", { kind: "permission" });
+		await settle();
+		check("a script as the pane's first process cannot be told from a shell", footer(tile("firstproc")) === "UNKNOWN", describe(tile("firstproc")));
+		await focusOn(first);
+		const since = mark();
+		await expectBytes("but its own blocked record still stops text on the sending connection", first, () => host.press(K.text), []);
+		await expectFlash("and the key flashes BLOCKED", K.text, "BLOCKED", since);
+		await closeSession(first);
+
+		const hostile = join(root, "hostile.txt");
+		writeFileSync(hostile, "\x1b]7501;state=blocked:kind=permission:app=leftover\x1b\\");
+		const shell = await newShell("shell", plainDir);
+		await sandbox.rex("send", "-s", shell.session, "-b", shell.block, `cat ${hostile}\r`);
+		await eventually(async () => {
+			const { records } = await sandbox.json("block", "call", "-s", shell.session, "-b", shell.block, "program_status");
+			return Array.isArray(records) && records.some((record) => record.state === "blocked");
+		}, 3000, 50);
+		await focusOn(shell);
+		setSettings(K.text, { text: "echo shell-ok-$((40+2))", submit: true });
+		await sleep(1600);
+		await host.press(K.text);
+		await expectSoon("a blocked record some program left does not stop text to a plain shell", async () => (await screen(shell)).includes("shell-ok-42"), { everyMs: 100 });
+		setSettings(K.text, DEFAULT_SETTINGS.text);
+		await closeSession(shell);
+		await sleep(1600);
 	});
 
 	await phase("newtab", async () => {

@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 
 import { classifyRexError, RexApiError } from "./rex-errors";
 import type { SizeChange } from "./rex-focus";
-import { agentOf, list, type RawForeground, type RawRecord } from "./rex-snapshot";
+import { agentOf, list, type RawBlock, type RawForeground } from "./rex-snapshot";
 
 const ALIVE_MS = 250;
 
@@ -57,7 +57,7 @@ export class ChangeFilter {
 
 	constructor(
 		private readonly handlers: ChangeHandlers,
-		private readonly recordsOf: (blockId: string) => readonly RawRecord[] = () => [],
+		private readonly blockOf: (blockId: string) => Pick<RawBlock, "child" | "records"> = () => ({}),
 	) {}
 
 	public line(line: string): void {
@@ -98,7 +98,8 @@ export class ChangeFilter {
 	private processChanged(blockId: string, foreground: RawForeground | null | undefined): boolean {
 		const previous = this.process.get(blockId);
 		// A foreground can be absent, or a root login with no cwd, during startup.
-		const next = { agent: agentOf(foreground, this.recordsOf(blockId)) ?? "", cwd: foreground?.cwd ?? previous?.cwd ?? "" };
+		const { child, records } = this.blockOf(blockId);
+		const next = { agent: agentOf(foreground, list(records), child) ?? "", cwd: foreground?.cwd ?? previous?.cwd ?? "" };
 		this.process.set(blockId, next);
 		return previous?.agent !== next.agent || previous.cwd !== next.cwd;
 	}

@@ -11,7 +11,7 @@ const B = "block:01a1a685-8b8e-74d2-bc02-c8e45579e6d4";
 function filter(recordsOf?: (blockId: string) => readonly RawRecord[]) {
 	const sizes: SizeChange[] = [];
 	const state = { changes: 0 };
-	const instance = new ChangeFilter({ onChange: () => state.changes++, onSizeChanged: (change) => sizes.push(change) }, recordsOf);
+	const instance = new ChangeFilter({ onChange: () => state.changes++, onSizeChanged: (change) => sizes.push(change) }, recordsOf && ((blockId) => ({ records: [...recordsOf(blockId)] })));
 	const send = (...events: unknown[]) => {
 		const before = state.changes;
 		for (const line of events) {

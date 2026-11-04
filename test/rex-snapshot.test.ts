@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 
-import { activityCounts, agentOf, buildSnapshot, isShellForeground, paneStatus, type RawBlock, type RawRecord, type RawSnapshot, SeenTracker } from "../src/rex-snapshot";
+import { activityCounts, agentOf, buildSnapshot, isAtPrompt, isShellForeground, paneStatus, type RawBlock, type RawRecord, type RawSnapshot, SeenTracker } from "../src/rex-snapshot";
 
 const TERMINAL = "com.superlogical.terminal";
 const CLAUDE = { pid: 10, name: "2.1.318", argv0: "claude", cwd: "/work/api-server" };
@@ -71,6 +71,52 @@ describe("agentOf", () => {
 		const node = { pid: 20, argv0: "node" };
 		expect(agentOf(node, [{ id: "rsact/bg/1", state: "working", app: "x", owner: { pid: 20 } }])).toBeUndefined();
 		expect(agentOf(node, [{ state: "working", app: "x" }])).toBeUndefined();
+	});
+});
+
+describe("a script that did not exec its agent", () => {
+	const SCRIPT = { pid: 30, name: "sh", argv0: "/bin/sh", cwd: "/work/api-server" };
+	const ENV_BASH = { pid: 30, name: "bash", argv0: "bash", cwd: "/work/api-server" };
+	const ROOT = { pid: 29 };
+	const own: RawRecord[] = [{ state: "blocked", app: "claude-code", owner: { pid: 30 } }];
+
+	test.each([
+		["a script's shell with its own record", SCRIPT, own, ROOT, false],
+		["env bash with its own record", ENV_BASH, own, ROOT, false],
+		["a script's shell before its first report", SCRIPT, [], ROOT, true],
+		["a record someone else left", SCRIPT, [{ state: "blocked", owner: { pid: 31 } }], ROOT, true],
+		["an ownerless record", SCRIPT, [{ state: "blocked" }], ROOT, true],
+		["only an activity record", SCRIPT, [{ id: "rsact/bg/1", state: "working", owner: { pid: 30 } }], ROOT, true],
+		["a login shell that printed a record", { ...ZSH, pid: 30 }, own, ROOT, true],
+		["the pane's first process that printed a record", SCRIPT, own, { pid: 30 }, true],
+		["no foreground", undefined, own, ROOT, true],
+		["not a shell at all", CLAUDE, [], ROOT, false],
+	])("%s", (_name, foreground, records, child, expected) => {
+		expect(isAtPrompt(foreground, records, child)).toBe(expected);
+	});
+
+	test("it counts as the agent and reads blocked", () => {
+		const raw = block("b", SCRIPT, own);
+		raw.child = ROOT;
+		expect(agentOf(SCRIPT, own, ROOT)).toBe("claude-code");
+		expect(paneStatus(raw, undefined).status).toBe("blocked");
+		const snap = buildSnapshot({ sessions: [session("s", 1, [raw])] });
+		expect(snap.panes[0]).toMatchObject({ agent: "claude-code", agent_status: "blocked" });
+		expect(snap.workspaces[0].agent_status).toBe("blocked");
+	});
+
+	test("its activity counts, because it is the agent's pane", () => {
+		const records = [...own, { id: "rsact/bg/1", state: "working", owner: { pid: 30 } }];
+		const raw = block("b", SCRIPT, records);
+		raw.child = ROOT;
+		expect(buildSnapshot({ sessions: [session("s", 1, [raw])] }).panes[0].tokens).toMatchObject({ rsact_background: "1" });
+	});
+
+	test("a login shell that printed a blocked record stays a shell", () => {
+		const raw = block("b", { ...ZSH, pid: 30 }, own);
+		raw.child = ROOT;
+		expect(buildSnapshot({ sessions: [session("s", 1, [raw])] }).panes[0]).toMatchObject({ agent_status: "unknown" });
+		expect(buildSnapshot({ sessions: [session("s", 1, [raw])] }).panes[0].agent).toBeUndefined();
 	});
 });
 

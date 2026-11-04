@@ -49,6 +49,7 @@ local function inspect_terminal(session_id, block)
   end
   block.records = status.records
   block.foreground = process.foreground
+  block.child = process.child
   return true
 end
 
@@ -100,13 +101,81 @@ local function paste()
 end
 `;
 
+/**
+ * The classification in rex-snapshot.ts, again on the sending connection: the
+ * deck's last snapshot can be stale by the time a key is pressed.
+ */
+const GUARD = `
+${PASTE_TEXT}
+local SHELLS = { ${SHELLS.map((shell) => `${shell} = true`).join(", ")} }
+local function program(path)
+  return ((path or ""):match("([^/]*)$"):gsub("^%-", ""))
+end
+local function inspect()
+  local status = call("block.method", { session_id = session_id, block_id = block_id, method = "program_status" })
+  local process = call("block.method", { session_id = session_id, block_id = block_id, method = "process" })
+  return status.records or {}, process.foreground, process.child
+end
+local function is_activity(record)
+  return (record.id or ""):sub(1, 6) == "rsact/"
+end
+local function owner_pid(record)
+  return record.owner and record.owner.pid
+end
+local function at_prompt(records, foreground, child)
+  if foreground == nil then
+    return true
+  end
+  local name = foreground.argv0 or foreground.name or ""
+  if not SHELLS[program(name)] then
+    return false
+  end
+  if name:sub(1, 1) == "-" or (child ~= nil and child.pid == foreground.pid) then
+    return true
+  end
+  for _, record in ipairs(records) do
+    if not is_activity(record) and owner_pid(record) == foreground.pid then
+      return false
+    end
+  end
+  return true
+end
+local function is_blocked(records, foreground, prompt)
+  for _, record in ipairs(records) do
+    if not is_activity(record) and record.state == "blocked" then
+      local owner = owner_pid(record)
+      if owner == nil and not prompt then
+        return true
+      end
+      if owner ~= nil and foreground ~= nil and owner == foreground.pid then
+        return true
+      end
+    end
+  end
+  return false
+end
+local function refuse_blocked()
+  local records, foreground, child = inspect()
+  if is_blocked(records, foreground, at_prompt(records, foreground, child)) then
+    error("agent_blocked", 0)
+  end
+end
+`;
+
 export const WRITE_SCRIPT = `
 ${PASTE_TEXT}
 write(text)
 `;
 
+/**
+ * For a pane the deck sees no agent in. Under a shell at its prompt a blocked
+ * record only counts if that shell owns it: an ownerless one is a leftover, and
+ * refusing on it would leave the shell unusable, but an owned one can be an agent
+ * behind a script the snapshot could not tell from a shell.
+ */
 export const INPUT_SCRIPT = `
-${PASTE_TEXT}
+${GUARD}
+refuse_blocked()
 paste()
 write("\\r")
 `;
@@ -118,31 +187,21 @@ write("\\r")
  * the default choice exits, and other agents' reporting is unverified.
  */
 export const PROMPT_SCRIPT = `
-${PASTE_TEXT}
-local SHELLS = { ${SHELLS.map((shell) => `${shell} = true`).join(", ")} }
-local function program(path)
-  return ((path or ""):match("([^/]*)$"):gsub("^%-", ""))
-end
-local status = call("block.method", { session_id = session_id, block_id = block_id, method = "program_status" })
-local process = call("block.method", { session_id = session_id, block_id = block_id, method = "process" })
-local foreground = process.foreground
-if foreground == nil or SHELLS[program(foreground.argv0 or foreground.name)] then
+${GUARD}
+local records, foreground, child = inspect()
+if at_prompt(records, foreground, child) then
   error("agent_not_ready", 0)
 end
-local has_root, blocked = false, false
-for _, record in ipairs(status.records or {}) do
-  local id = record.id or ""
-  if id == "" then
+local has_root = false
+for _, record in ipairs(records) do
+  if (record.id or "") == "" then
     has_root = true
-  end
-  if id:sub(1, 6) ~= "rsact/" and record.state == "blocked" then
-    blocked = true
   end
 end
 if program(foreground.argv0) == "claude" and not has_root then
   error("agent_not_ready", 0)
 end
-if blocked then
+if is_blocked(records, foreground, false) then
   error("agent_blocked", 0)
 end
 paste()

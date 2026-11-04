@@ -82,11 +82,15 @@ export type RawForeground = {
 	cwd?: string;
 };
 
+/** The pane's first process: its shell when started with no login step, else login. */
+export type RawChild = { pid?: number } | null;
+
 export type RawBlock = {
 	block_id: string;
 	creator_name?: string;
 	records?: RawRecord[] | object;
 	foreground?: RawForeground | null;
+	child?: RawChild;
 };
 
 export type RawWindow = {
@@ -138,20 +142,37 @@ function isRoot(record: RawRecord): boolean {
 	return !record.id;
 }
 
+function ownRecord(foreground: RawForeground, records: readonly RawRecord[]): RawRecord | undefined {
+	return records.find((record) => !isActivityRecord(record) && record.owner?.pid !== undefined && record.owner.pid === foreground.pid);
+}
+
+/**
+ * Rex names the process group leader as the foreground and credits a report to
+ * it, so an agent behind a script that does not exec shows the script's shell,
+ * which then owns the agent's records. A login shell or the pane's first process
+ * owning a record is only a shell that printed one at its prompt.
+ */
+export function isAtPrompt(foreground: RawForeground | null | undefined, records: readonly RawRecord[], child?: RawChild): boolean {
+	if (!foreground || !isShellForeground(foreground)) {
+		return !foreground;
+	}
+	return (foreground.argv0 ?? foreground.name ?? "").startsWith("-") || foreground.pid === child?.pid || !ownRecord(foreground, records);
+}
+
 /**
  * Claude's foreground `name` is a version string, so the basename of argv0 is
- * what identifies it. A wrapper can show `node` or `python`, and then needs a
- * record the foreground process itself reported.
+ * what identifies it. A wrapper can show `node`, `python` or a shell, and then
+ * needs a record the foreground process itself reported.
  */
-export function agentOf(foreground: RawForeground | null | undefined, records: readonly RawRecord[]): string | undefined {
-	if (!foreground || isShellForeground(foreground)) {
+export function agentOf(foreground: RawForeground | null | undefined, records: readonly RawRecord[], child?: RawChild): string | undefined {
+	if (!foreground || isAtPrompt(foreground, records, child)) {
 		return undefined;
 	}
 	const name = program(foreground.argv0);
 	if (KNOWN_AGENTS.has(name)) {
 		return name;
 	}
-	const own = records.find((record) => !isActivityRecord(record) && record.owner?.pid !== undefined && record.owner.pid === foreground.pid);
+	const own = ownRecord(foreground, records);
 	return own ? own.app || own.effective_app || name : undefined;
 }
 
@@ -183,13 +204,14 @@ export type PaneStatus = { status: AgentStatus; error: boolean };
  * means anything: every other record is a leftover from a program now gone.
  */
 export function paneStatus(block: RawBlock, seenAt: string | undefined): PaneStatus {
-	const records = list<RawRecord>(block.records).filter((record) => !isActivityRecord(record));
+	const all = list<RawRecord>(block.records);
+	const records = all.filter((record) => !isActivityRecord(record));
 	const root = records.find(isRoot);
 	const finished = (): PaneStatus =>
 		root?.updated_at !== undefined && root.updated_at === seenAt
 			? { status: "idle", error: false }
 			: { status: "done", error: root?.state === "error" };
-	if (isShellForeground(block.foreground)) {
+	if (isAtPrompt(block.foreground, all, block.child)) {
 		return isFinished(root) ? finished() : { status: "unknown", error: false };
 	}
 	if (records.some((record) => record.state === "blocked")) {
@@ -333,7 +355,7 @@ export function buildSnapshot(raw: RawSnapshot, { focusedSessionId, seen }: Buil
 			for (const block of blocks) {
 				const records = list<RawRecord>(block.records);
 				const result = paneStatus(block, seen?.get(block.block_id));
-				const agent = agentOf(block.foreground, records);
+				const agent = agentOf(block.foreground, records, block.child);
 				const counts = agent ? activityCounts(records) : undefined;
 				const tokens = counts && tokensFrom(counts);
 				paneResults.push(result);
