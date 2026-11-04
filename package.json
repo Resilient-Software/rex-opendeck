@@ -7,7 +7,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"build": "esbuild src/plugin.ts --bundle --platform=node --target=node24 --format=esm --external:bufferutil --external:utf-8-validate --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=plugin/bin/plugin.mjs",
+		"build": "esbuild src/plugin.ts --bundle --platform=node --target=node24 --format=esm --external:bufferutil --external:utf-8-validate --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=plugin/bin/plugin.mjs --metafile=plugin/bin/meta.json && node scripts/notices.mjs plugin/bin/meta.json plugin/bin",
 		"test": "vitest run",
 		"typecheck": "tsc --noEmit",
 		"lint": "eslint --max-warnings 0 src test",

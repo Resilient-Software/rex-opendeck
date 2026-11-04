@@ -608,6 +608,8 @@ try {
 	});
 
 	await phase("connect", async () => {
+		const notices = readFileSync(join(pluginDir, "bin", "THIRD_PARTY_NOTICES.txt"), "utf8");
+		check("the bundle carries its licences", existsSync(join(pluginDir, "bin", "LICENSE.txt")) && ["ws", "zod", "@elgato/streamdeck"].every((name) => notices.includes(`\n${name} `)), notices.split("\n").filter((line) => / \(MIT\)$/.test(line)).join(", "));
 		const registered = await host.start();
 		check("plugin registers over websocket", registered.event === "registerPlugin");
 		pinger = setInterval(() => host.ping().then((ms) => rtts.push(ms), () => rtts.push(Infinity)), 500);

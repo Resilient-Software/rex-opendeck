@@ -168,4 +168,6 @@ sheets at real key size under `dist/sheet/`.
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0. See [LICENSE](LICENSE). The built plugin carries this licence and the
+licences of the packages it bundles, in `bin/LICENSE.txt` and
+`bin/THIRD_PARTY_NOTICES.txt`.
