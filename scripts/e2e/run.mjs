@@ -1185,6 +1185,19 @@ try {
 	});
 
 	await phase("text", async () => {
+		await focusOn(s.scratch);
+		const scratchBefore = (await chunks(s.scratch)).length;
+		await expectBytes(
+			"a control press right after a tile goes to the session just asked for",
+			s.agent,
+			async () => {
+				await host.press(tileWith(">agent<"));
+				await host.press(K.text);
+			},
+			[bracketed("go ahead"), CR],
+		);
+		check("not the one just left", (await chunks(s.scratch)).length === scratchBefore);
+		await sleep(1600);
 		await focusOn(s.agent);
 		await expectBytes("Send Text pastes bracketed, then Enter", s.agent, () => host.press(K.text), [bracketed("go ahead"), CR]);
 		setSettings(K.text, { text: "first\nsecond", submit: true });

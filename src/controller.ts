@@ -23,6 +23,7 @@ import { attentionQueue, countStates, resolveTarget, spaceName, type Target } fr
 const OFFLINE_AFTER_FAILURES = 3;
 const COUNTDOWN_REFRESH_TICKS = 15;
 const FOCUS_PENDING_TIMEOUT_MS = 5000;
+const FOCUS_WAIT_STEP_MS = 25;
 const FOCUS_FAILURE_FLASH_MS = 1000;
 const FLASH_OK_MS = 900;
 const FLASH_FAIL_MS = 1500;
@@ -229,6 +230,12 @@ export class DeckController {
 		return undefined;
 	}
 
+	/** The session a requested focus is still on its way to, or "". */
+	private awaitedFocus(): string {
+		const waiting = this.pendingFocusWS !== this.focusedWorkspaceId() && Date.now() - this.pendingSince < FOCUS_PENDING_TIMEOUT_MS;
+		return waiting ? this.pendingFocusWS : "";
+	}
+
 	private async createWorkspace(id: string): Promise<void> {
 		try {
 			await this.bridge.createWorkspace();
@@ -295,6 +302,18 @@ export class DeckController {
 			this.log.error(`focus ${workspaceId} failed: ${err}`);
 			setTimeout(() => this.render(), FOCUS_FAILURE_FLASH_MS + 100);
 		}
+	}
+
+	/**
+	 * Focus moves only when the app's resize comes back, hundreds of ms after the
+	 * press that asked for it. Until then the target still resolves to the session
+	 * the user just left, so a press made in that gap waits rather than go there.
+	 */
+	private async focusArrives(workspaceId: string): Promise<boolean> {
+		while (this.focusedWorkspaceId() !== workspaceId && this.pendingFocusWS === workspaceId && Date.now() - this.pendingSince < FOCUS_PENDING_TIMEOUT_MS) {
+			await new Promise((resolve) => setTimeout(resolve, FOCUS_WAIT_STEP_MS));
+		}
+		return this.focusedWorkspaceId() === workspaceId;
 	}
 
 	/** FOCUSING… while a requested focus is unconfirmed, FAILED briefly after an error. */
@@ -373,11 +392,12 @@ export class DeckController {
 		if (!this.ready() || !this.snapshot) {
 			return;
 		}
-		const target = this.targetFor(id, inst);
-		if (!target.ok) {
+		const settings = inst.settings as ControlSettings;
+		const awaited = settings.target ? "" : this.awaitedFocus();
+		const known = awaited ? undefined : this.targetFor(id, inst);
+		if (known && !known.ok) {
 			return;
 		}
-		const settings = inst.settings as ControlSettings;
 		let cycleValue = "";
 		if (kind === "cycle") {
 			const values = cycleValues(settings.values ?? "");
@@ -395,6 +415,15 @@ export class DeckController {
 		// One send at a time: a prompt's Enter comes about 300 ms after its
 		// text, so overlapping prompts would interleave in the agent's input.
 		this.sending = this.sending.then(async () => {
+			if (awaited && !(await this.focusArrives(awaited))) {
+				this.log.info(`${kind} press waiting on ${awaited}: focus did not arrive`);
+				this.flash(id, { text: "FAILED", ok: false });
+				return;
+			}
+			const target = known ?? this.targetFor(id, inst);
+			if (!target.ok) {
+				return;
+			}
 			const flash = await pressControl(kind, settings, target, { bridge: this.bridge, raise: this.raise }, cycleValue);
 			if (!flash.ok) {
 				this.log.info(`${kind} press on ${target.pane.pane_id}: ${flash.text}`);

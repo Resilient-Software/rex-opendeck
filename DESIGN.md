@@ -166,7 +166,7 @@ Every control key has a target setting: **Focused agent** (the default) or a **p
 - A pinned key stores the session's ID and its name. While the plugin watches that ID without a gap in the connection, the pin follows it and keeps the saved name current. After a gap (Rex may have restarted) the pin holds only if the ID still belongs to a session with that name. If the ID is gone or now names a different session, but exactly one session has the pinned name as its label, the key re-pins to it and saves the new ID; names derived from a session's number never re-pin, and duplicate labels, which Rex allows, count as no match. Otherwise the key shows `GONE`, dims, and a press does nothing. A pin saved without a name matches by ID alone.
 - With no focused session the footer shows `NO AGENT`, the key dims, and a press does nothing.
 
-The footer always shows where a press will go before it is pressed.
+The footer always shows where a press will go before it is pressed. The exception is the moment after a session tile or the summary asked for focus: the footer still names the old session until the app confirms, so a press of an unpinned key made during that `FOCUSING…` waits for it, then goes to the session that arrived. If the focus fails, or has not arrived after 5 s, it sends nothing and flashes `FAILED`. Pinned keys do not wait.
 
 ### Sending
 

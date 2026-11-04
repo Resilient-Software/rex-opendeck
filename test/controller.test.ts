@@ -296,6 +296,130 @@ describe("control keys", () => {
 	});
 });
 
+describe("a control press right after a session tile", () => {
+	function focusedOn(id: string): Snapshot {
+		const snapshot = session();
+		snapshot.focused_workspace_id = id;
+		snapshot.focused_pane_id = `${id}:p1`;
+		for (const workspace of snapshot.workspaces) {
+			workspace.focused = workspace.workspace_id === id;
+		}
+		for (const each of snapshot.panes) {
+			each.focused = each.pane_id === `${id}:p1`;
+		}
+		return snapshot;
+	}
+
+	async function withTiles(snapshot = session()) {
+		const d = await deck(snapshot);
+		for (const [i, id] of ["t1", "t2", "t3", "t4"].entries()) {
+			d.place(id, "space", i, 0);
+		}
+		return d;
+	}
+
+	const sends = (calls: Call[]) => calls.filter(([method]) => method !== "focusWorkspace");
+
+	test("waits for the focus it follows, then goes there", async () => {
+		const d = await withTiles();
+		const key = d.place("c", "text", 0, 1, { text: "go ahead" });
+		d.press("t4");
+		d.press("c");
+		await settle();
+		expect(d.calls).toEqual([["focusWorkspace", "w4"]]);
+		d.state.snapshot = focusedOn("w4");
+		await d.controller.refresh();
+		await vi.waitFor(() => expect(sends(d.calls)).toEqual([["promptAgent", "w4:p1", "go ahead"]]));
+		await vi.waitFor(() => expect(key.image).toContain("SENT"));
+	});
+
+	test("Send Keys and New Tab wait too, so esc cannot hit the session just left", async () => {
+		const d = await withTiles();
+		d.place("k", "keys", 0, 1);
+		d.place("n", "newtab", 1, 1);
+		d.press("t4");
+		d.press("k");
+		d.press("n");
+		await settle();
+		expect(sends(d.calls)).toEqual([]);
+		d.state.snapshot = focusedOn("w4");
+		await d.controller.refresh();
+		await vi.waitFor(() => expect(sends(d.calls).map(([method, target]) => [method, target])).toEqual([["sendKeys", "w4:p1"], ["createTab", "w4"]]));
+	});
+
+	test("a key with no target before the tile can still follow it", async () => {
+		const snapshot = session();
+		delete snapshot.focused_workspace_id;
+		delete snapshot.focused_pane_id;
+		snapshot.workspaces[0].focused = false;
+		snapshot.panes[0].focused = false;
+		const d = await withTiles(snapshot);
+		d.place("c", "text", 0, 1, { text: "go ahead" });
+		d.press("t4");
+		d.press("c");
+		await settle();
+		d.state.snapshot = focusedOn("w4");
+		await d.controller.refresh();
+		await vi.waitFor(() => expect(sends(d.calls)).toEqual([["promptAgent", "w4:p1", "go ahead"]]));
+	});
+
+	test("a focus that fails sends nothing, rather than to the session left behind", async () => {
+		const d = await withTiles();
+		const key = d.place("c", "text", 0, 1, { text: "go ahead" });
+		d.bridge.focusWorkspace = async () => {
+			await new Promise((resolve) => setTimeout(resolve, 50));
+			throw new Error("no app");
+		};
+		d.press("t4");
+		d.press("c");
+		await vi.waitFor(() => expect(key.image).toContain("FAILED"));
+		expect(d.calls).toEqual([]);
+	});
+
+	test("a focus that never arrives sends nothing after the timeout", async () => {
+		const d = await withTiles();
+		const key = d.place("c", "text", 0, 1, { text: "go ahead" });
+		vi.useFakeTimers();
+		try {
+			d.press("t4");
+			d.press("c");
+			await vi.advanceTimersByTimeAsync(4900);
+			expect(key.image).not.toContain("FAILED");
+			await vi.advanceTimersByTimeAsync(200);
+			expect(key.image).toContain("FAILED");
+			expect(sends(d.calls)).toEqual([]);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	test("a key pinned elsewhere does not wait", async () => {
+		const d = await withTiles();
+		d.place("c", "text", 0, 1, { text: "go ahead", target: "w1", targetLabel: "api-server" });
+		d.press("t4");
+		d.press("c");
+		await settle();
+		expect(sends(d.calls)).toEqual([["promptAgent", "w1:p1", "go ahead"]]);
+	});
+
+	test("pressing the tile already focused holds nothing up", async () => {
+		const d = await withTiles();
+		d.place("c", "text", 0, 1, { text: "go ahead" });
+		d.press("t1");
+		d.press("c");
+		await settle();
+		expect(sends(d.calls)).toEqual([["promptAgent", "w1:p1", "go ahead"]]);
+	});
+
+	test("a press with no tile before it goes straight out", async () => {
+		const d = await withTiles();
+		d.place("c", "text", 0, 1, { text: "go ahead" });
+		d.press("c");
+		await settle();
+		expect(d.calls).toEqual([["promptAgent", "w1:p1", "go ahead"]]);
+	});
+});
+
 describe("offline", () => {
 	test("summary and control keys dim, ignore presses and recover", async () => {
 		const d = await deck();
