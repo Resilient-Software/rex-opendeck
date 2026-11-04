@@ -250,7 +250,8 @@ export function activityCounts(records: readonly RawRecord[]): ActivityCounts {
 		const next = NEXT_ID.exec(id);
 		if (next && record.state === "idle") {
 			const at = Number(next[1]) * 1000;
-			if (counts.nextAt === null || at < counts.nextAt) {
+			// Any bytes reaching the terminal can set this id, and a time past what a Date holds would fail the whole snapshot.
+			if (!Number.isNaN(new Date(at).getTime()) && (counts.nextAt === null || at < counts.nextAt)) {
 				counts.nextAt = at;
 				counts.loop = next[2] !== undefined;
 			}

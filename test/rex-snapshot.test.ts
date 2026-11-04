@@ -212,6 +212,14 @@ describe("activityCounts", () => {
 		expect(activityCounts([{ id: "rsact/next/1893456000.loop", state: "idle" }])).toMatchObject({ nextAt: 1893456000000, loop: true });
 	});
 
+	test("a next time past what a Date can hold counts for nothing", () => {
+		expect(activityCounts([{ id: "rsact/next/8640000000000", state: "idle" }]).nextAt).toBe(8640000000000000);
+		for (const seconds of ["8640000000001", "99999999999999", "9".repeat(32), "9".repeat(400)]) {
+			expect(activityCounts([{ id: `rsact/next/${seconds}.loop`, state: "idle" }])).toMatchObject({ nextAt: null, loop: false });
+		}
+		expect(activityCounts([{ id: "rsact/next/99999999999999.loop", state: "idle" }, { id: "rsact/next/1893456000", state: "idle" }])).toMatchObject({ nextAt: 1893456000000, loop: false });
+	});
+
 	test("malformed activity records fail open", () => {
 		const counts = activityCounts([
 			{ id: "rsact/next/soon", state: "idle" },
@@ -335,6 +343,17 @@ describe("buildSnapshot", () => {
 			expect(snap.workspaces[0]).toMatchObject({ agent_status: "idle" });
 			expect(snap.workspaces[0].status_word).toBeUndefined();
 		});
+	});
+
+	test("one bad record cannot take the other sessions down with it", () => {
+		const snap = buildSnapshot({
+			sessions: [
+				session("s1", 1, [block("b1", CLAUDE, [{ state: "idle" }, { id: "rsact/next/99999999999999", state: "idle" }])]),
+				session("s2", 2, [block("b2", CLAUDE, [{ state: "blocked" }])]),
+			],
+		});
+		expect(snap.panes[0].tokens).toBeUndefined();
+		expect(snap.workspaces.map((space) => space.agent_status)).toEqual(["idle", "blocked"]);
 	});
 
 	describe("activity tokens", () => {

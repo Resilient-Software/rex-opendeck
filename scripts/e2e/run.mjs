@@ -1046,6 +1046,12 @@ try {
 			report(s.scratch, "idle", { id: "rsact/bg/two" });
 			await scratchShows("a malformed next and a non-working bg count for nothing", COLORS.plain, "", (svg) => footer(svg) === "IDLE");
 			clearRecords(s.scratch, "rsact");
+			report(s.scratch, "idle", { id: "rsact/next/99999999999999" });
+			await scratchShows("a next time past what a Date holds counts for nothing", COLORS.plain, "", (svg) => footer(svg) === "IDLE");
+			report(s.scratch, "working");
+			await scratchShows("and snapshots go on working", COLORS.working, "");
+			report(s.scratch, "idle");
+			clearRecords(s.scratch, "rsact");
 
 			await focusOn(s.docs);
 			const totalBefore = words(svgOf(K.summary))[0];
