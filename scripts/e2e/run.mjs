@@ -1098,6 +1098,20 @@ try {
 			await expectSoon("and its own done reads DONE", () => footer(tile("leftover")) === "DONE", { timeoutMs: 2000, instead: () => describe(tile("leftover")) });
 			await closeSession(leftover);
 
+			const relaunched = await newShell("relaunched", plainDir);
+			const launch = async () => {
+				await sandbox.rex("send", "-s", relaunched.session, "-b", relaunched.block, `${CLAUDE} relaunched\r`);
+				await attachTty(relaunched, ["claude"]);
+				report(relaunched, "idle");
+			};
+			await launch();
+			await expectSoon("an agent's first idle shows", () => footer(tile("relaunched")) === "IDLE", { timeoutMs: 2000, instead: () => describe(tile("relaunched")) });
+			process.kill((await processOf(relaunched)).foreground.pid, "SIGKILL");
+			await eventually(async () => argv0Base((await processOf(relaunched)).foreground) === "sh", 3000, 100);
+			await launch();
+			await expectSoon("a restarted agent's first idle, a repeat of the last one's, shows without waiting for the reconcile", () => footer(tile("relaunched")) === "IDLE", { timeoutMs: 2000, instead: () => describe(tile("relaunched")) });
+			await closeSession(relaunched);
+
 			await focusOn(s.docs);
 			const totalBefore = words(svgOf(K.summary))[0];
 			report(s.notes, "working", { id: "rsact/bg/one" });

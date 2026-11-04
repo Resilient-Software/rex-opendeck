@@ -81,6 +81,13 @@ describe("program_status_changed churn", () => {
 		expect(send(status("", "working"))).toBe(1);
 	});
 
+	test("the same state from a new owner passes", () => {
+		const { send } = filter();
+		expect(send(status("", "idle", { owner: { pid: 100 } }))).toBe(1);
+		expect(send(status("", "idle", { owner: { pid: 100 }, msg: "again" }))).toBe(0);
+		expect(send(status("", "idle", { owner: { pid: 200 } }))).toBe(1);
+	});
+
 	test("records and blocks are tracked apart", () => {
 		const { send } = filter();
 		expect(send(status("", "working"), status("agent_a", "working"), event.block(S, "block:2", "program_status_changed", { id: "", record: { state: "working" } }))).toBe(3);

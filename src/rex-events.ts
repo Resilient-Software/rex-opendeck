@@ -30,7 +30,7 @@ type BlockPayload = {
 	payload?: {
 		id?: string;
 		ids?: string[];
-		record?: { state?: string; kind?: string };
+		record?: { state?: string; kind?: string; owner?: { pid?: number } };
 		foreground?: RawForeground | null;
 		owner?: string;
 		principal?: { pid?: number };
@@ -112,7 +112,7 @@ export class ChangeFilter {
 
 	private statusChanged(blockId: string, payload: NonNullable<BlockPayload["payload"]>): boolean {
 		const key = `${blockId}\n${payload.id ?? ""}`;
-		const signature = JSON.stringify([payload.id ?? "", payload.record?.state, payload.record?.kind ?? null]);
+		const signature = JSON.stringify([payload.id ?? "", payload.record?.state, payload.record?.kind ?? null, payload.record?.owner?.pid ?? null]);
 		if (this.status.get(key) === signature) {
 			return false;
 		}
