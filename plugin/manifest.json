@@ -1,0 +1,162 @@
+{
+	"Name": "Rex Deck",
+	"Description": "Idle isn't always done: Rex Deck turns your Rex sessions into live Stream Deck keys that show which coding agents are blocked, working, still busy with subagents or background tasks, or waiting on a scheduled loop, and adds keys that send commands, text and key presses to them.",
+	"UUID": "com.resilientsoftware.rexdeck",
+	"Author": "Resilient Software",
+	"Version": "0.1.0.0",
+	"Icon": "icons/plugin",
+	"Category": "Rex Deck",
+	"CategoryIcon": "icons/list-space",
+	"SDKVersion": 3,
+	"Software": {
+		"MinimumVersion": "7.1"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "10.15"
+		}
+	],
+	"CodePath": "bin/plugin.mjs",
+	"Nodejs": {
+		"Version": "24"
+	},
+	"Actions": [
+		{
+			"Name": "Rex Session",
+			"UUID": "com.resilientsoftware.rexdeck.space",
+			"Icon": "icons/list-space",
+			"Tooltip": "Live tile for a Rex session; press to focus it. Green focused, yellow working, red blocked, blue busy in the background, mauve waiting on a timer. Extra sessions page via arrow keys.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": false,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "icons/space"
+				}
+			],
+			"PropertyInspectorPath": "ui/space.html"
+		},
+		{
+			"Name": "New Rex Session",
+			"UUID": "com.resilientsoftware.rexdeck.newspace",
+			"Icon": "icons/list-newspace",
+			"Tooltip": "Create a new Rex session and focus it. Dims while Rex is offline.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": false,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "icons/newspace"
+				}
+			],
+			"PropertyInspectorPath": "ui/newspace.html"
+		},
+		{
+			"Name": "Agent Summary",
+			"UUID": "com.resilientsoftware.rexdeck.summary",
+			"Icon": "icons/list-summary",
+			"Tooltip": "Counts your sessions by state; press to jump to the one that needs you most, blocked first.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": false,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "icons/summary"
+				}
+			],
+			"PropertyInspectorPath": "ui/summary.html"
+		},
+		{
+			"Name": "Slash Command",
+			"UUID": "com.resilientsoftware.rexdeck.command",
+			"Icon": "icons/list-command",
+			"Tooltip": "Sends a slash command such as /review to the focused agent or a pinned session.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": false,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "icons/command"
+				}
+			],
+			"PropertyInspectorPath": "ui/command.html"
+		},
+		{
+			"Name": "Send Text",
+			"UUID": "com.resilientsoftware.rexdeck.text",
+			"Icon": "icons/list-text",
+			"Tooltip": "Types a phrase into the focused agent or a pinned session, then presses Enter unless you turn it off.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": false,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "icons/text"
+				}
+			],
+			"PropertyInspectorPath": "ui/text.html"
+		},
+		{
+			"Name": "Send Keys",
+			"UUID": "com.resilientsoftware.rexdeck.keys",
+			"Icon": "icons/list-keys",
+			"Tooltip": "Sends key presses to the focused agent or a pinned session; esc by default, to interrupt.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": false,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "icons/keys"
+				}
+			],
+			"PropertyInspectorPath": "ui/keys.html"
+		},
+		{
+			"Name": "Cycle",
+			"UUID": "com.resilientsoftware.rexdeck.cycle",
+			"Icon": "icons/list-cycle",
+			"Tooltip": "Each press sends the next value, such as /model opus, then sonnet, then haiku, to the focused agent or a pinned session.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": false,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "icons/cycle"
+				}
+			],
+			"PropertyInspectorPath": "ui/cycle.html"
+		},
+		{
+			"Name": "New Tab",
+			"UUID": "com.resilientsoftware.rexdeck.newtab",
+			"Icon": "icons/list-newtab",
+			"Tooltip": "Opens a Rex tab in the target pane's folder, or a folder you choose, and focuses it.",
+			"Controllers": [
+				"Keypad"
+			],
+			"SupportedInMultiActions": false,
+			"DisableAutomaticStates": true,
+			"States": [
+				{
+					"Image": "icons/newtab"
+				}
+			],
+			"PropertyInspectorPath": "ui/newtab.html"
+		}
+	]
+}

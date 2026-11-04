@@ -1,0 +1,265 @@
+{
+ "clients": [
+  {
+   "client_id": "client:01a1a685-8bd4-7497-9ca2-85545dc5412f",
+   "connected_at": "2026-11-04T12:25:32.372301Z",
+   "connection_lost_at": "2026-11-04T12:25:32.924005Z",
+   "connection_state": "lost",
+   "info": {
+    "kind": "app",
+    "label": "fake-mac",
+    "name": "Rex.app",
+    "platform": "macos",
+    "version": "0.0.0-fake"
+   },
+   "principal": {
+    "display": "uid 501",
+    "gid": 20,
+    "kind": "peer",
+    "pid": 86248,
+    "transport": "unix",
+    "uid": 501
+   },
+   "session_ids": [
+    "session:01a1a685-8b8e-72ee-bdf5-945c8c4340ef",
+    "session:01a1a685-8ba9-7259-819b-f4dab2b30dd8",
+    "session:01a1a685-8bc0-793b-86fe-bfe2b363be75"
+   ]
+  },
+  {
+   "client_id": "client:01a1a685-8e30-78c2-a0a6-8021051867d3",
+   "connected_at": "2026-11-04T12:25:32.976575Z",
+   "connection_state": "connected",
+   "info": {
+    "kind": "app",
+    "label": "fake-mac",
+    "name": "Rex.app",
+    "platform": "macos",
+    "version": "0.0.0-fake"
+   },
+   "principal": {
+    "display": "uid 501",
+    "gid": 20,
+    "kind": "peer",
+    "pid": 86248,
+    "transport": "unix",
+    "uid": 501
+   },
+   "session_ids": [
+    "session:01a1a685-8b8e-72ee-bdf5-945c8c4340ef",
+    "session:01a1a685-8ba9-7259-819b-f4dab2b30dd8",
+    "session:01a1a685-8bc0-793b-86fe-bfe2b363be75",
+    "session:01a1a685-8f7b-7c3c-90e5-ce36c6a806ea"
+   ]
+  }
+ ],
+ "sessions": [
+  {
+   "active_window_id": "window:01a1a685-8f0e-71c1-aa10-556202fb4a40",
+   "label": "api-server",
+   "number": 1,
+   "session_id": "session:01a1a685-8b8e-72ee-bdf5-945c8c4340ef",
+   "windows": [
+    {
+     "blocks": [
+      {
+       "block_id": "block:01a1a685-8b8e-74d2-bc02-c8e45579e6d4",
+       "creator_name": "com.superlogical.terminal",
+       "foreground": {
+        "argv0": "/bin/sleep",
+        "cwd": "/work/api-server",
+        "invoked_path": "/bin/sleep",
+        "name": "sleep",
+        "path": "/bin/sleep",
+        "pid": 86415,
+        "user": "dev",
+        "user_id": 501
+       },
+       "records": {}
+      },
+      {
+       "block_id": "block:01a1a685-8f23-7b89-9a93-f87355ab279d",
+       "creator_name": "com.superlogical.terminal",
+       "foreground": {
+        "argv0": "/bin/sleep",
+        "cwd": "/work/docs",
+        "invoked_path": "/bin/sleep",
+        "name": "sleep",
+        "path": "/bin/sleep",
+        "pid": 86475,
+        "user": "dev",
+        "user_id": 501
+       },
+       "records": {}
+      }
+     ],
+     "focused_block_id": "block:01a1a685-8f23-7b89-9a93-f87355ab279d",
+     "label": "Window 9c1e1f52",
+     "window_id": "window:01a1a685-8b90-7c73-83da-37b99c1e1f52"
+    },
+    {
+     "blocks": [
+      {
+       "block_id": "block:01a1a685-8f0c-7631-96b9-bcbd3ac15958",
+       "creator_name": "com.superlogical.terminal",
+       "foreground": {
+        "argv0": "/bin/sleep",
+        "cwd": "/work/api-server",
+        "invoked_path": "/bin/sleep",
+        "name": "sleep",
+        "path": "/bin/sleep",
+        "pid": 86473,
+        "user": "dev",
+        "user_id": 501
+       },
+       "records": {}
+      },
+      {
+       "block_id": "block:01a1a685-8f50-700b-9ae8-dd3157032520",
+       "creator_name": "com.superlogical.terminal",
+       "foreground": {
+        "argv0": "/bin/sleep",
+        "cwd": "/work/home",
+        "invoked_path": "/bin/sleep",
+        "name": "sleep",
+        "path": "/bin/sleep",
+        "pid": 86478,
+        "user": "dev",
+        "user_id": 501
+       },
+       "records": {}
+      }
+     ],
+     "focused_block_id": "block:01a1a685-8f50-700b-9ae8-dd3157032520",
+     "label": "logs",
+     "window_id": "window:01a1a685-8f0e-71c1-aa10-556202fb4a40"
+    }
+   ]
+  },
+  {
+   "active_window_id": "window:01a1a685-8bab-70b3-b7cb-9879b82334f5",
+   "label": "webapp",
+   "number": 2,
+   "session_id": "session:01a1a685-8ba9-7259-819b-f4dab2b30dd8",
+   "windows": [
+    {
+     "blocks": [
+      {
+       "block_id": "block:01a1a685-8ba9-731c-90a2-ba14ff6d071f",
+       "creator_name": "com.superlogical.terminal",
+       "foreground": {
+        "argv0": "/usr/local/bin/claude",
+        "cwd": "/work/api-server",
+        "invoked_path": "/usr/local/bin/claude",
+        "name": "claude",
+        "path": "/usr/local/bin/claude",
+        "pid": 86422,
+        "user": "dev",
+        "user_id": 501
+       },
+       "records": [
+        {
+         "app": "claude-code",
+         "effective_app": "claude-code",
+         "msg": "all done",
+         "owner": {
+          "name": "claude",
+          "pid": 86422
+         },
+         "state": "done",
+         "updated_at": "2026-11-04T12:25:33.659798Z"
+        },
+        {
+         "app": "claude-code",
+         "effective_app": "claude-code",
+         "id": "agent_a1",
+         "owner": {
+          "name": "claude",
+          "pid": 86422
+         },
+         "state": "working",
+         "title": "review",
+         "updated_at": "2026-11-04T12:25:33.740429Z"
+        },
+        {
+         "app": "claude-code",
+         "effective_app": "claude-code",
+         "id": "rsact/bg/shell1",
+         "owner": {
+          "name": "claude",
+          "pid": 86422
+         },
+         "state": "working",
+         "title": "npm test",
+         "updated_at": "2026-11-04T12:25:33.82211Z"
+        },
+        {
+         "app": "claude-code",
+         "effective_app": "claude-code",
+         "id": "rsact/next/1893456000.loop",
+         "owner": {
+          "name": "claude",
+          "pid": 86422
+         },
+         "state": "idle",
+         "updated_at": "2026-11-04T12:25:33.903936Z"
+        }
+       ]
+      }
+     ],
+     "focused_block_id": "block:01a1a685-8ba9-731c-90a2-ba14ff6d071f",
+     "label": "Window b82334f5",
+     "window_id": "window:01a1a685-8bab-70b3-b7cb-9879b82334f5"
+    }
+   ]
+  },
+  {
+   "active_window_id": "window:01a1a685-8f67-76d2-a40b-46a73d5ac54f",
+   "label": "docs",
+   "number": 3,
+   "session_id": "session:01a1a685-8bc0-793b-86fe-bfe2b363be75",
+   "windows": [
+    {
+     "blocks": [
+      {
+       "block_id": "block:01a1a685-8bc0-7a02-ba83-9d037054d5b8",
+       "creator_name": "com.superlogical.terminal",
+       "foreground": {
+        "argv0": "/bin/sleep",
+        "cwd": "/work/api-server",
+        "invoked_path": "/bin/sleep",
+        "name": "sleep",
+        "path": "/bin/sleep",
+        "pid": 86431,
+        "user": "dev",
+        "user_id": 501
+       },
+       "records": {}
+      }
+     ],
+     "focused_block_id": "block:01a1a685-8bc0-7a02-ba83-9d037054d5b8",
+     "label": "Window 20bcb7db",
+     "window_id": "window:01a1a685-8bc2-7626-bf51-dcf320bcb7db"
+    },
+    {
+     "blocks": [
+      {
+       "block_id": "block:01a1a685-8f67-75d4-8cce-911e7bd18d4b",
+       "creator_name": "com.superlogical.onboarding"
+      }
+     ],
+     "focused_block_id": "block:01a1a685-8f67-75d4-8cce-911e7bd18d4b",
+     "label": "welcome",
+     "window_id": "window:01a1a685-8f67-76d2-a40b-46a73d5ac54f"
+    }
+   ]
+  },
+  {
+   "label": "empty",
+   "number": 4,
+   "session_id": "session:01a1a685-8f7b-7c3c-90e5-ce36c6a806ea",
+   "windows": {}
+  }
+ ],
+ "skipped": {}
+}

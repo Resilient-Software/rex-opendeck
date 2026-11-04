@@ -1,0 +1,11 @@
+node_modules/
+plugin/bin/
+*.sdPlugin/
+.DS_Store
+logs/
+go.work
+go.work.sum
+dist/
+e2e-out/
+e2e-out-plain/
+rex-path.txt

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec "${REX_STUB_NODE:-node}" "$(dirname "$0")/stub.mjs" "$@"
