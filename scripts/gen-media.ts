@@ -99,6 +99,7 @@ const tiles = {
 	focused: spaceTile(space(1, "api-server", { focused: true }), git("backend", "main"), { now: NOW }),
 	working: spaceTile(space(2, "refactor", { agent_status: "working" }), git("webapp", "feat/nav"), { now: NOW }),
 	blocked: spaceTile(space(3, "migration", { agent_status: "blocked" }), git("infra", "db-move"), { now: NOW }),
+	jumped: spaceTile(space(3, "migration", { agent_status: "blocked", focused: true }), git("infra", "db-move"), { now: NOW }),
 	busy: spaceTile(space(4, "tests", { tokens: busyTokens }), git("backend", "ci"), { now: NOW }),
 	loop: spaceTile(space(5, "nightly", { tokens: loopTokens }), git("ops", "main"), { now: NOW }),
 	idle: spaceTile(space(6, "docs"), git("handbook", "main"), { now: NOW }),
@@ -142,8 +143,8 @@ const heroDeck = deck(
 
 const hero = canvas(
 	text("Rex Deck", 110, 400, 104, TEXT, 700, "start") +
-		lines(["Every coding agent,", "live on your keys."], 114, 490, 46, SUBTEXT) +
-		lines(["Know which agents are busy, blocked or", "really done, and drive them from the deck."], 114, 660, 30, SUBTEXT) +
+		lines(["Your coding agents,", "live on your keys."], 114, 490, 46, SUBTEXT) +
+		lines(["Know which agents are busy, blocked or", "done, and drive them from your Stream Deck."], 114, 660, 30, SUBTEXT) +
 		heroDeck,
 );
 
@@ -154,15 +155,16 @@ const idle = canvas(
 		embed(tiles.busy, 760, 290, 400) +
 		embed(tiles.loop, 1320, 290, 400) +
 		text("Finished", 400, 760, 38, TEXT, 700) +
-		lines(["A plain key really", "means done"], 400, 815, 30, SUBTEXT, "middle") +
+		lines(["Nothing else reported", "running"], 400, 815, 30, SUBTEXT, "middle") +
 		text("Still busy", 960, 760, 38, TEXT, 700) +
 		lines(["2 subagents and", "1 background shell running"], 960, 815, 30, SUBTEXT, "middle") +
 		text("Waiting on a loop", 1520, 760, 38, TEXT, 700) +
-		lines(["Next check in", "17 minutes"], 1520, 815, 30, SUBTEXT, "middle"),
+		lines(["Next check in", "17 minutes"], 1520, 815, 30, SUBTEXT, "middle") +
+		text("Background shells and timers need the free rex-agent-activity companion.", 960, 925, 24, SUBTEXT, 400),
 );
 
 const legend = [
-	[tiles.focused, "Focused"],
+	[tiles.focused, "Viewing"],
 	[tiles.working, "Working"],
 	[tiles.blocked, "Needs you"],
 	[tiles.busy, "Busy in background"],
@@ -171,22 +173,23 @@ const legend = [
 ] as const;
 const states = canvas(
 	text("Read it from across the room", 960, 140, 76, TEXT, 700) +
-		text("The whole key lights up with the agent's state.", 960, 206, 34, SUBTEXT, 400) +
+		text("The whole key lights up with the session's state.", 960, 206, 34, SUBTEXT, 400) +
 		legend.map(([tile, label], i) => embed(tile, 115 + i * 290, 330, 250) + text(label, 115 + i * 290 + 125, 640, 28, TEXT, 600)).join("") +
-		text("Name, repository and branch on every key.", 960, 790, 30, SUBTEXT, 400),
+		text("Name, repository and branch on every key. The session you're viewing stays green.", 960, 790, 30, SUBTEXT, 400) +
+		text("Background shells and timers need the free rex-agent-activity companion.", 960, 925, 24, SUBTEXT, 400),
 );
 
 const summaryMix = counts({ blocked: 2, working: 3, background: 1, scheduled: 1, done: 1, idle: 1 });
 const summary = canvas(
 	text("See what needs you", 960, 130, 76, TEXT, 700) +
-		text("Agent Summary counts every agent by state. Press it to jump to the one that needs you, blocked first.", 960, 196, 30, SUBTEXT, 400) +
+		text("Agent Summary counts your sessions by state. Press it to jump to the one that needs you, blocked first.", 960, 196, 30, SUBTEXT, 400) +
 		embed(summaryTile(summaryMix, "ring"), 170, 320, 400) +
 		embed(summaryTile(summaryMix, "list"), 760, 320, 400) +
 		text("→", 1270, 560, 90, SUBTEXT, 700) +
-		embed(tiles.blocked, 1350, 320, 400) +
+		embed(tiles.jumped, 1350, 320, 400) +
 		text("Ring", 370, 790, 32, TEXT, 600) +
 		text("List", 960, 790, 32, TEXT, 600) +
-		text("Press: jumps to the blocked agent", 1550, 790, 32, TEXT, 600),
+		text("Press: jumps to the blocked session", 1550, 790, 32, TEXT, 600),
 );
 
 const controlKeys = [
@@ -198,11 +201,11 @@ const controlKeys = [
 	[controls.pinned, "Pinned to #2"],
 ] as const;
 const drive = canvas(
-	text("Drive agents from the deck", 960, 130, 76, TEXT, 700) +
+	text("Drive agents from Stream Deck", 960, 130, 76, TEXT, 700) +
 		text("Send a command, a phrase or key presses to the agent you're focused on, or pin a key to a session.", 960, 196, 30, SUBTEXT, 400) +
 		controlKeys.map(([tile, label], i) => embed(tile, 115 + i * 290, 330, 250) + text(label, 115 + i * 290 + 125, 640, 28, TEXT, 600)).join("") +
 		lines(
-			["Every key shows where a press will go. Nothing is typed into an agent", "waiting at a permission prompt; esc still gets through."],
+			["Every key shows where a press will go. Text keys hold back when an agent", "reports a permission prompt; esc still gets through."],
 			960,
 			760,
 			30,
@@ -212,7 +215,7 @@ const drive = canvas(
 );
 
 const pager = canvas(
-	text("Scales past the deck", 960, 150, 76, TEXT, 700) +
+	text("More sessions than keys", 960, 150, 76, TEXT, 700) +
 		text("More sessions than keys? The last two keys become a pager. New Session adds one.", 960, 216, 34, SUBTEXT, 400) +
 		[tiles.working, tiles.blocked, pagerTile(true, 1, 3, false, false), pagerTile(false, 1, 3, true, false), newSpaceTile(false)]
 			.map((tile, i) => embed(tile, 110 + i * 350, 360, 300))

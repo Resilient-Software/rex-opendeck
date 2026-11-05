@@ -2,6 +2,7 @@ import type { JsonObject } from "@elgato/utils";
 import { describe, expect, test, vi } from "vitest";
 
 import { type BridgeLike, DeckController, type KeyHandle, type KeyKind } from "../src/controller";
+import { RexApiError } from "../src/rex-errors";
 import type { Pane, Snapshot, Workspace } from "../src/rex";
 
 function space(id: string, number: number, label: string, overrides: Partial<Workspace> = {}): Workspace {
@@ -441,8 +442,57 @@ describe("a control press right after a session tile", () => {
 	});
 });
 
+describe("first run", () => {
+	/** A plugin that has never reached Rex; the fake's first snapshot already failed. */
+	async function neverConnected(failure: Error) {
+		const d = await deck(failure as never);
+		const tile = d.place("t", "space", 0, 0);
+		const next = d.place("n", "space", 1, 0);
+		const summary = d.place("s", "summary", 2, 0);
+		const command = d.place("c", "command", 3, 0, { command: "/review" });
+		return { d, tile, next, summary, command };
+	}
+
+	test("with no rex to run, keys say to install it instead of connecting for ever", async () => {
+		const { d, tile, next, summary, command } = await neverConnected(new RexApiError("no_binary", "spawn rex ENOENT"));
+		expect(tile.image).toContain("CONNECTING");
+		await d.controller.refresh();
+		await d.controller.refresh();
+		expect(tile.image).toContain("NOT FOUND");
+		expect(tile.image).toContain("INSTALL REX");
+		expect(next.image).not.toContain("NOT FOUND");
+		expect(summary.image).toContain("NO REX");
+		expect(command.image).toContain("NO REX");
+		d.press("t");
+		d.press("c");
+		await settle();
+		expect(d.calls).toEqual([]);
+		expect(tile.alerts).toBe(1);
+		expect(command.alerts).toBe(1);
+	});
+
+	test("rex installed but not running reads as offline", async () => {
+		const { d, tile, summary } = await neverConnected(new RexApiError("no_server", "no server"));
+		await d.controller.refresh();
+		await d.controller.refresh();
+		expect(tile.image).toContain("OFFLINE");
+		expect(tile.image).not.toContain("NOT FOUND");
+		expect(summary.image).toContain("OFFLINE");
+	});
+
+	test("installing rex brings the tiles back", async () => {
+		const { d, tile, summary } = await neverConnected(new RexApiError("no_binary", "spawn rex ENOENT"));
+		await d.controller.refresh();
+		await d.controller.refresh();
+		d.state.snapshot = session();
+		await d.controller.refresh();
+		expect(tile.image).not.toContain("NOT FOUND");
+		expect(summary.image).toContain(">4</text>");
+	});
+});
+
 describe("offline", () => {
-	test("summary and control keys dim, ignore presses and recover", async () => {
+	test("summary and control keys dim, alert on a press without acting, and recover", async () => {
 		const d = await deck();
 		const summary = d.place("s", "summary", 0, 0);
 		const command = d.place("c", "command", 1, 0, { command: "/review" });
@@ -458,6 +508,8 @@ describe("offline", () => {
 		d.press("c");
 		await settle();
 		expect(d.calls).toEqual([]);
+		expect(summary.alerts).toBe(1);
+		expect(command.alerts).toBe(1);
 
 		d.state.snapshot = session();
 		await d.controller.refresh();

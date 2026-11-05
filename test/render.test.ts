@@ -7,6 +7,7 @@ import {
 	emptyTile,
 	newSpaceTile,
 	noSpacesTile,
+	missingTile,
 	offlineTile,
 	pagerTile,
 	spaceTile,
@@ -58,6 +59,7 @@ describe("Rex wording", () => {
 		expect(svg(connectingTile())).toMatch(/>REX<.*>CONNECTING</);
 		expect(svg(noSpacesTile())).toMatch(/>NO SESSIONS<.*>OPEN REX</);
 		expect(svg(offlineTile())).toMatch(/>REX<.*>OFFLINE</);
+		expect(svg(missingTile())).toMatch(/>REX<.*>NOT FOUND<.*>INSTALL REX</);
 		expect(svg(newSpaceTile(false))).toContain(">NEW SESSION<");
 	});
 
@@ -169,6 +171,7 @@ describe("every key image", () => {
 			connectingTile(),
 			noSpacesTile(),
 			offlineTile(),
+			missingTile(),
 		];
 		for (const image of images) {
 			for (const char of svg(image)) {

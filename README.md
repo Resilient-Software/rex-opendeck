@@ -6,11 +6,13 @@ TypeScript on the official [Stream Deck SDK](https://docs.elgato.com/streamdeck/
 built for the Elgato Stream Deck app and
 [OpenDeck](https://github.com/nekename/OpenDeck).
 
-**Status: early.** Tested against a Rex server of API revision 10, with a stand-in
-for the Mac app and a fake Stream Deck host. It has not yet been run on a physical
-deck.
+**Status: early.** Run on a physical Stream Deck with the Elgato app and Claude Code,
+and tested against a Rex server of API revision 10 with a stand-in for the Mac app
+and a fake Stream Deck host. Codex and OpenDeck have not been run with it.
 
-Free to use. Apache-2.0. Not an official Rex or Elgato product.
+Free to use. Apache-2.0. Collects no data and makes no network requests of its
+own: it talks to the local Rex CLI and the Stream Deck app. Not an official Rex or
+Elgato product.
 
 ## How it works
 
@@ -100,13 +102,15 @@ them. Configure a control key in its property inspector.
 
 ## Requirements
 
-- Rex with the Mac app. Knowing which
+- [Rex](https://www.superlogical.com/rex/docs) with the Mac app, currently an
+  invite-only beta. If the plugin cannot find it, the top-left key shows
+  `REX NOT FOUND`. Knowing which
   session the app is showing rests on undocumented behaviour (see Focus in
   [DESIGN.md](DESIGN.md)), so a Rex update can break the green tile while
   everything else keeps working. The plugin finds the `rex` CLI via `REX_PATH`,
   the recorded install path or the official install locations
 - Elgato Stream Deck 7.1+, or OpenDeck 2.14+ with Node.js 24+ installed
-- macOS. The Elgato app also runs on Windows, but the plugin has not been tested there
+- macOS 15 or later, which Rex needs. The Elgato app also runs on Windows, but the plugin has not been tested there
 - Node.js 24+ and npm to build
 
 ## Development

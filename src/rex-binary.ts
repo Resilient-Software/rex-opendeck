@@ -15,11 +15,20 @@ export type BinaryEnvironment = {
 	readText(path: string): string;
 };
 
+/** The plugin folder, or "" when the bundle was not loaded from a file. */
+function bundleRoot(): string {
+	try {
+		return join(dirname(fileURLToPath(import.meta.url)), "..");
+	} catch {
+		return "";
+	}
+}
+
 function defaultEnvironment(): BinaryEnvironment {
 	return {
 		env: process.env,
 		home: homedir(),
-		bundleRoot: join(dirname(fileURLToPath(import.meta.url)), ".."),
+		bundleRoot: bundleRoot(),
 		exists: existsSync,
 		readText: (path) => readFileSync(path, "utf8"),
 	};
@@ -47,7 +56,7 @@ export async function resolveBinary(host: BinaryEnvironment = defaultEnvironment
 		return host.env.REX_PATH;
 	}
 	try {
-		const recorded = host.readText(join(host.bundleRoot, "rex-path.txt")).trim();
+		const recorded = host.bundleRoot ? host.readText(join(host.bundleRoot, "rex-path.txt")).trim() : "";
 		if (recorded && host.exists(recorded)) {
 			return recorded;
 		}

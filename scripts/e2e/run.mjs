@@ -1492,16 +1492,17 @@ try {
 
 		const chosen = join(repos, "docs");
 		setSettings(K.newTab, { cwd: chosen });
-		const count = (await windowsOf(s.agent)).length;
+		const windowsBefore = await windowsOf(s.agent);
 		await sleep(1000);
 		await host.press(K.newTab);
 		const withChosen = await eventually(async () => {
 			const list = await windowsOf(s.agent);
-			return list.length === count + 1 ? list : undefined;
+			return list.length === windowsBefore.length + 1 ? list : undefined;
 		}, 4000, 100);
-		const second = withChosen?.find((window) => window.window_id === app.visible?.window_id);
+		const second = withChosen?.find((window) => !windowsBefore.some((other) => other.window_id === window.window_id));
 		const secondCwd = second && (await shellCwdIn(s.agent.session, second.window_id));
 		check("a chosen folder is the one that opens", secondCwd === chosen, secondCwd);
+		await expectSoon("and the app shows it", () => app.visible?.window_id === second?.window_id, { instead: () => JSON.stringify(app.visible) });
 		setSettings(K.newTab, { cwd: "/no/such/folder/here" });
 		await sleep(1000);
 		const total = (await windowsOf(s.agent)).length;
@@ -1679,7 +1680,7 @@ try {
 		await host.press(K.newSpace);
 		await host.press(ctx(0, 0));
 		await settle(300);
-		check("keys do nothing while offline", host.alerts.length === alertsBefore);
+		check("a press while offline alerts on its key and does nothing else", host.alerts.length === alertsBefore + 2);
 		await host.waitForQuiet(600);
 		board("offline", "Rex server stopped");
 
@@ -1736,7 +1737,7 @@ try {
 	const calls = rexCalls();
 	const strayCalls = calls.filter((line) => !line.endsWith(` --autostart=false -S ${sandbox.endpoint}`));
 	check("every rex call the plugin made named the sandbox, with autostart off", calls.length > 0 && strayCalls.length === 0, `${calls.length} calls, ${strayCalls.length} others${strayCalls[0] ? `: ${strayCalls[0]}` : ""}`);
-	check("no host alert beyond the one the no-app phase asked for", host.alerts.length <= 1, `${host.alerts.length} alerts`);
+	check("host alerts come only from presses that could not act", host.alerts.length === 4, host.alerts.map((alert) => alert.context).join(", "));
 } finally {
 	await cleanup();
 	const { stdout: leftovers } = await eventually(async () => {

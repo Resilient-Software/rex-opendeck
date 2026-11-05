@@ -1,9 +1,11 @@
 {
 	"Name": "Rex Deck",
-	"Description": "Idle isn't always done: Rex Deck turns your Rex sessions into live Stream Deck keys that show which coding agents are blocked, working, still busy with subagents or background tasks, or waiting on a scheduled loop, and adds keys that send commands, text and key presses to them.",
+	"Description": "Idle isn't always done: Rex Deck turns your Rex sessions into live Stream Deck keys that show which coding agents are blocked, working, still busy with subagents or background tasks, or waiting on a scheduled loop, and adds keys that send commands, text and key presses to them. Background shells, monitors and timers need the free rex-agent-activity companion.",
 	"UUID": "com.resilientsoftware.rexdeck",
 	"Author": "Resilient Software",
-	"Version": "0.1.0.0",
+	"URL": "https://github.com/Resilient-Software/rex-opendeck",
+	"SupportURL": "https://github.com/Resilient-Software/rex-opendeck/issues",
+	"Version": "1.0.0.0",
 	"Icon": "icons/plugin",
 	"Category": "Rex Deck",
 	"CategoryIcon": "icons/list-space",
@@ -14,7 +16,7 @@
 	"OS": [
 		{
 			"Platform": "mac",
-			"MinimumVersion": "10.15"
+			"MinimumVersion": "15.0"
 		}
 	],
 	"CodePath": "bin/plugin.mjs",
@@ -26,7 +28,7 @@
 			"Name": "Rex Session",
 			"UUID": "com.resilientsoftware.rexdeck.space",
 			"Icon": "icons/list-space",
-			"Tooltip": "Live tile for a Rex session; press to focus it. Green focused, yellow working, red blocked, blue busy in the background, mauve waiting on a timer. Extra sessions page via arrow keys.",
+			"Tooltip": "Live key for a Rex session; press to show it in Rex. Green viewed, yellow working, red blocked, blue busy in the background, mauve waiting on a timer (shells and timers need rex-agent-activity). The last two keys page through extra sessions.",
 			"Controllers": [
 				"Keypad"
 			],

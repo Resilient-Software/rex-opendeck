@@ -359,3 +359,7 @@ export function noSpacesTile(): string {
 export function offlineTile(): string {
 	return messageTile(["REX", "OFFLINE"], COL_RED);
 }
+
+export function missingTile(): string {
+	return messageTile(["REX", "NOT FOUND", "INSTALL REX"], COL_OVERLAY);
+}

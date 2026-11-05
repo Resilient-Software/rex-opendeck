@@ -75,7 +75,7 @@
 		</svg>
 		<h4>Rex Session</h4>
 		<p>
-			A live tile for one Rex session: its number in the corner, its name in the centre, the repository and
+			A live key for one Rex session: its number in the corner, its name in the centre, the repository and
 			⎇ branch below. Press to show that session in the Rex app and raise it. The footer shows
 			FOCUSING… until Rex confirms, or FAILED · TRY AGAIN briefly on error.
 		</p>
@@ -125,11 +125,12 @@
 			<p>
 				With more sessions than keys, the last two keys become ← and → pagers with a page indicator; the
 				arrow pointing toward the focused session is accented. When everything fits again they return to
-				being session tiles.
+				being session keys.
 			</p>
 			<p>
-				If Rex is unreachable the deck shows REX OFFLINE, dims the last-known tiles, and goes inert until
-				the next good snapshot.
+				If Rex is unreachable the keys show REX OFFLINE and dim until the next good snapshot; a press only
+				raises an alert. If Rex is not installed they show REX NOT FOUND. Rex for macOS is an invite-only
+				beta: <a id="rex-link" href="https://www.superlogical.com/rex/docs/installation">get an invite</a>.
 			</p>
 		</details>
 		<p>This key has no settings.</p>
@@ -139,6 +140,10 @@
 				websocket.onopen = () => {
 					websocket.send(JSON.stringify({ event: registerEvent, uuid: propertyInspectorUUID }));
 				};
+				document.getElementById("rex-link").addEventListener("click", (event) => {
+					event.preventDefault();
+					websocket.send(JSON.stringify({ event: "openUrl", payload: { url: event.currentTarget.href } }));
+				});
 			}
 		</script>
 	</body>

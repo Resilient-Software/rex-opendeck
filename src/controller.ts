@@ -9,6 +9,7 @@ import {
 	connectingTile,
 	controlTile,
 	emptyTile,
+	missingTile,
 	newSpaceTile,
 	noSpacesTile,
 	offlineTile,
@@ -17,6 +18,7 @@ import {
 	type SummaryLook,
 	summaryTile,
 } from "./render";
+import { RexApiError } from "./rex-errors";
 import { Backoff, Coalescer, pollDue, SUBSCRIBE_BACKOFF_CAP_TICKS } from "./schedule";
 import { attentionQueue, countStates, resolveTarget, spaceName, type Target } from "./state";
 
@@ -110,6 +112,7 @@ export class DeckController {
 	private readonly refreshSoon = new Coalescer(EVENT_DEBOUNCE_MS, () => void this.poll(), EVENT_MIN_GAP_MS);
 	private readonly rendered = new Map<string, string>();
 	private readonly resubscribe = new Backoff(SUBSCRIBE_BACKOFF_CAP_TICKS);
+	private rexMissing = false;
 	private readonly roles = new Map<string, Role>();
 	private sending: Promise<void> = Promise.resolve();
 	private snapshot: Snapshot | undefined;
@@ -153,6 +156,10 @@ export class DeckController {
 		}
 		const inst = this.instances.get(id);
 		if (!inst) {
+			return;
+		}
+		if (!this.ready()) {
+			this.alert(inst);
 			return;
 		}
 		if (inst.kind === "summary") {
@@ -228,6 +235,10 @@ export class DeckController {
 		}
 		this.flashes.delete(id);
 		return undefined;
+	}
+
+	private alert(inst: Instance): void {
+		inst.handle.showAlert().catch(() => {});
 	}
 
 	/** The session a requested focus is still on its way to, or "". */
@@ -361,6 +372,7 @@ export class DeckController {
 				this.log.info("rex: reachable again");
 			}
 			this.failures = 0;
+			this.rexMissing = false;
 			this.everConnected = true;
 			this.snapshot = snapshot;
 			if (this.pendingFocusWS) {
@@ -373,6 +385,7 @@ export class DeckController {
 		} catch (err) {
 			this.failures++;
 			this.epoch++;
+			this.rexMissing = err instanceof RexApiError && err.code === "no_binary";
 			// Keep the last good frame through two failed polls to avoid
 			// flicker.
 			if (this.failures === OFFLINE_AFTER_FAILURES) {
@@ -396,6 +409,7 @@ export class DeckController {
 		const awaited = settings.target ? "" : this.awaitedFocus();
 		const known = awaited ? undefined : this.targetFor(id, inst);
 		if (known && !known.ok) {
+			this.alert(inst);
 			return;
 		}
 		if (kind === "cycle" && cycleValues(settings.values ?? "").length === 0) {
@@ -412,6 +426,7 @@ export class DeckController {
 			}
 			const target = known ?? this.targetFor(id, inst);
 			if (!target.ok) {
+				this.alert(inst);
 				return;
 			}
 			const cycleValue = kind === "cycle" ? this.takeCycleValue(id, inst, settings) : "";
@@ -460,7 +475,7 @@ export class DeckController {
 			if (!connecting && !offline) {
 				target = this.targetFor(id, inst);
 			}
-			const face = controlFace(inst.kind, settings, target, index, offline ? "OFFLINE" : "");
+			const face = controlFace(inst.kind, settings, target, index, offline ? this.unreachableWord() : "");
 			const flash = this.activeFlash(id);
 			this.setImage(id, inst, controlTile(flash ? { ...face, flash } : face));
 		}
@@ -485,7 +500,8 @@ export class DeckController {
 		}
 
 		if (!this.everConnected || this.snapshot === undefined) {
-			this.setImage(...ordered[0], connectingTile());
+			const unreachable = this.failures >= OFFLINE_AFTER_FAILURES;
+			this.setImage(...ordered[0], unreachable ? this.unreachableTile() : connectingTile());
 			for (const [id, inst] of ordered.slice(1)) {
 				this.setImage(id, inst, emptyTile());
 			}
@@ -556,7 +572,7 @@ export class DeckController {
 			this.setImage(rightId, right, pagerTile(false, this.page + 1, count, focusedPage > this.page, offline));
 		}
 		if (offline) {
-			this.setImage(...ordered[0], offlineTile());
+			this.setImage(...ordered[0], this.unreachableTile());
 		}
 	}
 
@@ -569,10 +585,10 @@ export class DeckController {
 			}
 			const look: SummaryLook = inst.settings.look === "list" ? "list" : "ring";
 			let image: string;
-			if (connecting) {
+			if (offline) {
+				image = summaryTile(null, look, { dim: true, footer: this.unreachableWord(), footerRed: true });
+			} else if (connecting) {
 				image = summaryTile(null, look, { footer: "CONNECTING" });
-			} else if (offline) {
-				image = summaryTile(null, look, { dim: true, footer: "OFFLINE", footerRed: true });
 			} else {
 				const flash = this.activeFlash(id);
 				const target = this.snapshot!.workspaces.find((space) => space.workspace_id === this.summaryTargets.get(id));
@@ -647,6 +663,14 @@ export class DeckController {
 		if (this.ticks % COUNTDOWN_REFRESH_TICKS === 0 && this.hasCountdown()) {
 			this.render();
 		}
+	}
+
+	private unreachableTile(): string {
+		return this.rexMissing ? missingTile() : offlineTile();
+	}
+
+	private unreachableWord(): string {
+		return this.rexMissing ? "NO REX" : "OFFLINE";
 	}
 }
 

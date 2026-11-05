@@ -213,7 +213,7 @@ The app client to drive comes from `client.list`: a `kind` of `app`, not `lost` 
 | Empty key | No-op | No-op |
 | Key without the action | Never touched | Never touched |
 
-The New Rex Session key renders as a green `+` with `NEW SESSION` below; it dims and goes inert while Rex is offline.
+The New Rex Session key renders as a green `+` with `NEW SESSION` below; it dims while Rex is offline, and a press there only raises the host's alert.
 
 - Every key acts exactly once on key-up. Holding it must not create a second action, and a key-up without a preceding key-down is ignored.
 - Pager keys move one page in their direction. Do not auto-repeat or wrap at either end.
@@ -235,11 +235,12 @@ The New Rex Session key renders as a green `+` with `NEW SESSION` below; it dims
 
 ## Empty, loading, and offline states
 
-- **Starting:** top-left shows `REX · CONNECTING`; every other session key shows an inert dot. The summary shows `CONNECTING` and control keys are dim; both are inert until the first snapshot.
+- **Starting:** top-left shows `REX · CONNECTING`; every other session key shows an inert dot. The summary shows `CONNECTING` and control keys are dim. Until the first snapshot, a press on any of them only raises the host's alert.
 - **Online, no sessions:** top-left shows `NO SESSIONS · OPEN REX`; the other session keys show an inert dot, and there are no pagers.
 - **Unused positions:** an inert dot on black; do not show fake slot numbers or plus buttons.
 - **Transient poll failure:** keep the last good frame for two failed polls to avoid flicker.
-- **Offline after three failures:** freeze and dim last-known labels on plain backgrounds, disable all focus and page actions, and show `REX OFFLINE` in red text on the top-left key. Summary and control keys dim and go inert, presses send nothing, and the summary does not keep showing stale counts. Recover automatically on the next valid snapshot.
+- **Offline after three failures:** freeze and dim last-known labels on plain backgrounds, disable all focus and page actions, and show `REX OFFLINE` in red text on the top-left key. Summary and control keys dim, and the summary does not keep showing stale counts. A press sends nothing and raises the host's alert. Recover automatically on the next valid snapshot.
+- **Rex not installed:** the same, reached from `CONNECTING` on a fresh install, but the top-left key shows `REX · NOT FOUND · INSTALL REX` and the summary and control keys show `NO REX`. The binary is looked for again every ten failures, so installing Rex brings the tiles back without a restart.
 
 ## Staged roadmap
 
