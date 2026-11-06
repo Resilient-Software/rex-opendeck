@@ -28,7 +28,7 @@
 			"Name": "Rex Session",
 			"UUID": "com.resilientsoftware.rexdeck.space",
 			"Icon": "icons/list-space",
-			"Tooltip": "Live key for a Rex session; press to show it in Rex. Green viewed, yellow working, red blocked, blue busy in the background, mauve waiting on a timer (shells and timers need rex-agent-activity). The last two keys page through extra sessions.",
+			"Tooltip": "Live key for a Rex session; press to show it in Rex. Green viewed, yellow working, red blocked, teal done, blue busy in the background, mauve waiting on a timer (shells and timers need rex-agent-activity). The last two keys page through extra sessions.",
 			"Controllers": [
 				"Keypad"
 			],

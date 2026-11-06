@@ -69,6 +69,19 @@ describe("Rex wording", () => {
 		expect(svg(spaceTile(space({ agent_status: "done" }), { repo: "", branch: "" }, { now: NOW }))).toContain(">DONE<");
 	});
 
+	test("done gets a teal field and still names itself, since teal sits close to the focused green", () => {
+		const field = (overrides: Partial<Workspace>) => /<rect width="144" height="144" fill="(#[0-9a-f]{6})"/.exec(svg(spaceTile(space(overrides), { repo: "", branch: "" }, { now: NOW })))?.[1];
+		const done = svg(spaceTile(space({ agent_status: "done" }), { repo: "", branch: "" }, { now: NOW }));
+		expect(field({ agent_status: "done" })).toBe("#94e2d5");
+		expect(done).toMatch(/fill="#1e1e2e"[^>]*>api-server</);
+		expect(done).toMatch(/fill="#313244"[^>]*>DONE</);
+		expect(svg(spaceTile(space({ agent_status: "done", status_word: "ERROR" }), { repo: "", branch: "" }, { now: NOW }))).toMatch(/fill="#94e2d5"[\s\S]*>ERROR</);
+		expect(field({ agent_status: "done", focused: true })).toBe("#a6e3a1");
+		expect(field({ agent_status: "done", tokens: { rsact_v: "1", rsact_state: "subagents", rsact_subagents: "1" } })).toBe("#89b4fa");
+		expect(field({ agent_status: "idle" })).toBeUndefined();
+		expect(svg(spaceTile(space({ agent_status: "done" }), { repo: "", branch: "" }, { now: NOW, dim: true }))).not.toContain("#94e2d5");
+	});
+
 	test("a failure footer stays readable on every field", () => {
 		const failed = { footer: "FAILED · TRY AGAIN", footerRed: true, now: NOW };
 		const fill = (overrides: Partial<Workspace>) =>
@@ -77,6 +90,7 @@ describe("Rex wording", () => {
 		expect(fill({ agent_status: "blocked" })).toBe("#313244");
 		expect(fill({ agent_status: "working" })).toBe("#313244");
 		expect(fill({ focused: true })).toBe("#313244");
+		expect(fill({ agent_status: "done" })).toBe("#313244");
 		expect(fill({ tokens: { rsact_v: "1", rsact_state: "subagents", rsact_subagents: "1" } })).toBe("#313244");
 		expect(fill({ tokens: { rsact_v: "1", rsact_state: "scheduled", rsact_next_at: new Date(NOW + 60_000).toISOString() } })).toBe("#f38ba8");
 	});

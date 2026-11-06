@@ -54,29 +54,33 @@ function truncate(s: string, maxChars: number): string {
  * blue when agents are idle but subagents or background tasks are still
  * running, near-black mauve with a mauve countdown when their only
  * activity is a scheduled check (both from
- * the optional activity tokens), plain otherwise.
+ * the optional activity tokens), teal when the session rolls up to done and no
+ * activity is reported, plain otherwise.
  * The footer names the state whenever colour alone would carry it: the
- * lifecycle word on plain tiles, activity pictograms with counts (or the
- * countdown) whenever there is some. Text mirrors how Rex names the session, plus
+ * lifecycle word on done and plain tiles (teal sits close to the focused
+ * green), activity pictograms with counts (or the countdown) whenever there
+ * is some. Text mirrors how Rex names the session, plus
  * where it is operating: repository and branch.
  */
 export function spaceTile(space: Workspace, info: GitInfo, opt: TileOpts): string {
 	let background = COL_BG;
 	let foreground = COL_TEXT;
 	let sub = COL_SUBTEXT;
-	let plain = true;
+	let lifecycleWord = true;
 	const activity = parseActivity(space.tokens);
 	if (!opt.dim) {
 		if (space.focused) {
-			[background, foreground, sub, plain] = [COL_GREEN, COL_BG, COL_SURFACE, false];
+			[background, foreground, sub, lifecycleWord] = [COL_GREEN, COL_BG, COL_SURFACE, false];
 		} else if (space.agent_status === "blocked") {
-			[background, foreground, sub, plain] = [COL_RED, COL_BG, COL_SURFACE, false];
+			[background, foreground, sub, lifecycleWord] = [COL_RED, COL_BG, COL_SURFACE, false];
 		} else if (space.agent_status === "working") {
-			[background, foreground, sub, plain] = [COL_YELLOW, COL_BG, COL_SURFACE, false];
+			[background, foreground, sub, lifecycleWord] = [COL_YELLOW, COL_BG, COL_SURFACE, false];
 		} else if (activity?.state === "scheduled") {
-			[background, plain] = [COL_MAUVE_DARK, false];
+			[background, lifecycleWord] = [COL_MAUVE_DARK, false];
 		} else if (activity) {
-			[background, foreground, sub, plain] = [COL_BLUE, COL_BG, COL_SURFACE, false];
+			[background, foreground, sub, lifecycleWord] = [COL_BLUE, COL_BG, COL_SURFACE, false];
+		} else if (space.agent_status === "done") {
+			[background, foreground, sub] = [COL_TEAL, COL_BG, COL_SURFACE];
 		}
 	}
 	const label = spaceName(space);
@@ -85,7 +89,7 @@ export function spaceTile(space: Workspace, info: GitInfo, opt: TileOpts): strin
 	if (!footer && !opt.dim && activity) {
 		items = activityItems(activity, opt.now ?? Date.now());
 	}
-	if (!footer && !items.length && plain && !opt.dim) {
+	if (!footer && !items.length && lifecycleWord && !opt.dim) {
 		footer = space.status_word ?? (space.agent_status || "unknown").toUpperCase();
 	}
 	// Red disappears on the red field and is hard to read on the other light ones.

@@ -110,13 +110,20 @@
 					</td>
 				</tr>
 				<tr>
+					<td><span class="sw" style="background: #94e2d5"></span>Teal</td>
+					<td>
+						An agent finished and nothing else was reported running; the footer says DONE or ERROR until you view it. In a
+						session with several agents, a finished one outranks one still working.
+					</td>
+				</tr>
+				<tr>
 					<td><span class="sw" style="background: #45475a"></span>Plain</td>
-					<td>Idle / done / error; the footer word carries the state.</td>
+					<td>Idle or unknown; the footer word carries the state.</td>
 				</tr>
 			</table>
 			<p>
 				Blue with a subagent count is reported by Claude Code itself. Background shells, monitors and mauve need
-				the optional rex-agent-activity companion. Without it those sessions stay plain.
+				the optional rex-agent-activity companion. Without it those sessions read as done or idle.
 			</p>
 			<p>
 				Placement is the configuration: sessions fill every key carrying this action, row-major, in Rex's

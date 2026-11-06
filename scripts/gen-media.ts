@@ -169,12 +169,13 @@ const legend = [
 	[tiles.blocked, "Needs you"],
 	[tiles.busy, "Busy in background"],
 	[tiles.loop, "Waiting on a timer"],
-	[tiles.idle, "Idle or done"],
+	[tiles.idle, "Idle"],
+	[tiles.done, "Done"],
 ] as const;
 const states = canvas(
 	text("Read it from across the room", 960, 140, 76, TEXT, 700) +
 		text("The whole key lights up with the session's state.", 960, 206, 34, SUBTEXT, 400) +
-		legend.map(([tile, label], i) => embed(tile, 115 + i * 290, 330, 250) + text(label, 115 + i * 290 + 125, 640, 28, TEXT, 600)).join("") +
+		legend.map(([tile, label], i) => embed(tile, 65 + i * 260, 340, 230) + text(label, 65 + i * 260 + 115, 630, 26, TEXT, 600)).join("") +
 		text("Name, repository and branch on every key. The session you're viewing stays green.", 960, 790, 30, SUBTEXT, 400) +
 		text("Background shells and timers need the free rex-agent-activity companion.", 960, 925, 24, SUBTEXT, 400),
 );

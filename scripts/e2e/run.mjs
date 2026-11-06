@@ -884,10 +884,10 @@ try {
 		report(s.scratch, "blocked");
 		await scratchIs("blocked without kind: red", COLORS.blocked);
 		report(s.scratch, "done");
-		await scratchIs("done: plain, says DONE", COLORS.plain, (svg) => footer(svg) === "DONE");
+		await scratchIs("done: teal, says DONE", COLORS.done, (svg) => footer(svg) === "DONE");
 		await expectSoon("the summary counts it as done", () => svgOf(K.summary).includes(`stroke="${COLORS.done}"`), { timeoutMs: 1000 });
 		report(s.scratch, "error");
-		await scratchIs("error: plain, says ERROR", COLORS.plain, (svg) => footer(svg) === "ERROR");
+		await scratchIs("error: teal, says ERROR", COLORS.done, (svg) => footer(svg) === "ERROR");
 		clearRecords(s.scratch);
 		await scratchIs("no records: plain, says UNKNOWN", COLORS.plain, (svg) => footer(svg) === "UNKNOWN");
 
@@ -899,7 +899,7 @@ try {
 		await scratchIs("root idle, a blocked child: red", COLORS.blocked);
 		clearRecords(s.scratch);
 		report(s.scratch, "error");
-		await scratchIs("ERROR again, for the board", COLORS.plain, (svg) => footer(svg) === "ERROR");
+		await scratchIs("ERROR again, for the board", COLORS.done, (svg) => footer(svg) === "ERROR");
 		report(s.agent, "done");
 		await expectSoon("DONE on another, for the board", () => footer(tile("agent")) === "DONE", { timeoutMs: 2000 });
 		await focusOn(s.docs);
@@ -1153,11 +1153,11 @@ try {
 		report(other, "blocked", { kind: "permission" });
 		await duoIs("one blocked outranks one working: red", COLORS.blocked);
 		report(other, "done");
-		await duoIs("done outranks working: DONE", COLORS.plain, (svg) => footer(svg) === "DONE");
+		await duoIs("done outranks working: DONE", COLORS.done, (svg) => footer(svg) === "DONE");
 		report(duo, "error");
-		await duoIs("an error in a tie says ERROR", COLORS.plain, (svg) => footer(svg) === "ERROR");
+		await duoIs("an error in a tie says ERROR", COLORS.done, (svg) => footer(svg) === "ERROR");
 		report(duo, "idle");
-		await duoIs("only the done left: DONE", COLORS.plain, (svg) => footer(svg) === "DONE");
+		await duoIs("only the done left: DONE", COLORS.done, (svg) => footer(svg) === "DONE");
 		report(other, "idle");
 		await duoIs("both idle: IDLE", COLORS.plain, (svg) => footer(svg) === "IDLE");
 
@@ -1175,7 +1175,7 @@ try {
 		await attachTty(third, ["claude"]);
 		await focusOn(s.notes);
 		report(third, "done");
-		await duoIs("a done in a hidden tab reads DONE", COLORS.plain, (svg) => footer(svg) === "DONE");
+		await duoIs("a done in a hidden tab reads DONE", COLORS.done, (svg) => footer(svg) === "DONE");
 		await focusOn(duo);
 		await focusOn(s.notes);
 		await settle(500);

@@ -43,7 +43,7 @@ Author each key at `144 × 144`, system sans text, flat geometry, no gradients, 
 - **Centre:** the session's label as Rex presents it, else `Session N`. One line, ellipsized.
 - **Text budget — where it operates:** below the name, the repository directory name and `⎇ branch`, derived from the folder of the session's active pane. Rex has no worktree metadata, so the active pane wins over the first pane. Omit lines that do not apply rather than shrinking type.
 - **Footer:** one of
-  - a literal lifecycle word (`IDLE`, `DONE`, `ERROR`) when the background is plain, so state is never colour-only;
+  - a literal lifecycle word (`IDLE`, `DONE`, `ERROR`, `UNKNOWN`) on the plain and teal fields, so state is never colour-only there; teal sits close to the focused green;
   - an activity row of pictograms and counts when the session has agent activity (below);
   - `FOCUSING…` or `FAILED · TRY AGAIN` after a press (see interactions).
 
@@ -55,10 +55,11 @@ Author each key at `144 × 144`, system sans text, flat geometry, no gradients, 
 | `working` | yellow `#F9E2AF` | dark `#1E1E2E` |
 | `blocked` (needs input) | red `#F38BA8` | dark `#1E1E2E` |
 | idle, but subagents or background tasks still running (activity) | blue `#89B4FA` | dark `#1E1E2E`; footer shows a pictogram and count per kind of work |
-| `idle` / `done` / `unknown` — neither working nor focused | plain `#1E1E2E` | light `#CDD6F4`, footer carries the word |
+| `done` (including `ERROR`), with no activity | teal `#94E2D5` | dark `#1E1E2E`; footer carries `DONE` or `ERROR` in `#313244` |
+| `idle` / `unknown` — neither working nor focused | plain `#1E1E2E` | light `#CDD6F4`, footer carries the word |
 | idle, only a scheduled check pending (activity) | near-black mauve `#362A52` | light `#CDD6F4`; footer shows the loop or clock pictogram and a countdown in mauve `#CBA6F7` (`17M`) |
 
-Precedence: focused > blocked > working > background activity > scheduled check > plain. Use `#A6ADC8` for metadata text on plain tiles.
+Precedence: focused > blocked > working > background activity > scheduled check > done > plain. Done is the same teal the Agent Summary uses, and comes after activity, as in the summary's count: an agent that finished while its subagents or shells still run is not done. Use `#A6ADC8` for metadata text on plain tiles.
 
 ### Pane status
 
@@ -107,7 +108,7 @@ The activity footer is a row of pictograms, each followed by its count:
 
 - **Counts first:** subagents, then shells, then monitors, at most three items. Each item is a 20-unit pictogram, a 2-unit gap and the count in 18 px bold; items sit 9 units apart, centred on the key, with the band centred at y = 124. Trailing items are dropped if the row would exceed 132 units.
 - **Countdown only when there are no counts:** the `loop` glyph for a recurring check, otherwise `clock`, followed by the time left: `45S`, `17M`, `2H`, `NOW`.
-- **Colour:** dark `#1E1E2E` on the light fields (green, yellow, red, blue), mauve `#CBA6F7` on the mauve field.
+- **Colour:** dark `#1E1E2E` on the light fields (green, yellow, red, blue, teal), mauve `#CBA6F7` on the mauve field.
 - Lifecycle words, `FOCUSING…` and `FAILED · TRY AGAIN` stay 13 px text.
 
 Working is a static yellow field; any motion experiment comes later and must not reduce legibility.

@@ -18,25 +18,28 @@ Elgato product.
 
 **Live tiles.** Keys become live tiles for Rex sessions: label, repository,
 branch, and a background colour carrying state (green focused, yellow working,
-red blocked). Pressing a tile shows that session in the Rex app and raises the
-app. When there are more sessions than keys, the last two keys become `←`/`→`
-pagers. Updates stream from a long-lived `rex events` child, so state changes
-land in well under a second; when the stream is down the plugin falls back to
-polling the CLI at 1 Hz.
+red blocked, teal done). Pressing a tile shows that session in the Rex app and
+raises the app. When there are more sessions than keys, the last two keys
+become `←`/`→` pagers. Updates stream from a long-lived `rex events` child, so
+state changes land in well under a second; when the stream is down the plugin
+falls back to polling the CLI at 1 Hz.
 
 **Idle isn't always done.** Agents often go quiet while subagents, background
 shells or a scheduled loop keep running. Claude Code reports its own subagents,
 so the deck shows those as is: a blue tile with an icon and a count. With the
-optional [rex-agent-activity](https://github.com/Resilient-Software/rex-agent-activity)
+optional
+[rex-agent-activity](https://github.com/Resilient-Software/rex-agent-activity)
 companion installed, the deck also counts background shells and monitors, and
 shows a dark mauve tile with a loop or clock icon and a countdown such as `17M`
-for a scheduled check. A plain tile really means finished. The Agent Summary
-key counts every state on one key, and a press jumps to the session that needs
-you most, blocked first.
+for a scheduled check. A teal `DONE` tile means an agent finished and nothing
+else was reported running; in a session with several agents, a finished one
+outranks one still working. The Agent Summary key counts every state on one
+key, and a press jumps to the session that needs you most, blocked first.
 
 **Done means not yet seen.** Rex keeps an agent's `done` until its next turn.
-The deck clears it for you: a tile reads `DONE` until you have looked at that
-pane with Rex in front, then `IDLE`, or `UNKNOWN` if the agent has since gone.
+The deck clears it for you: a tile stays teal with `DONE` until you have looked
+at that pane with Rex in front, then `IDLE`, or `UNKNOWN` if the agent has
+since gone.
 
 **Drive agents.** Control keys send a slash command, a phrase, key presses or
 the next value of a cycle to the agent you are focused on, or to a session you
