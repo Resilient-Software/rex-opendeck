@@ -1,6 +1,6 @@
 {
 	"Name": "Rex Deck",
-	"Description": "Idle isn't always done: Rex Deck turns your Rex sessions into live Stream Deck keys that show which coding agents are blocked, working, still busy with subagents or background tasks, or waiting on a scheduled loop, and adds keys that send commands, text and key presses to them. Background shells, monitors and timers need the free rex-agent-activity companion.",
+	"Description": "Rex Deck puts your Rex terminal sessions on Stream Deck keys and lets you control your coding agents from the deck. See which agents are working, blocked, done or busy in the background, and send them commands, text and key presses. Background shells, monitors and timers need the free rex-agent-activity companion.",
 	"UUID": "com.resilientsoftware.rexdeck",
 	"Author": "Resilient Software",
 	"URL": "https://github.com/Resilient-Software/rex-opendeck",

@@ -149,8 +149,8 @@ const hero = canvas(
 );
 
 const idle = canvas(
-	text("Idle isn't always done", 960, 130, 76, TEXT, 700) +
-		text("Agents go quiet while subagents, background shells or a scheduled loop keep running.", 960, 196, 34, SUBTEXT, 400) +
+	text("Finished, busy or waiting", 960, 130, 76, TEXT, 700) +
+		text("See when subagents, background shells or a scheduled loop are still running.", 960, 196, 34, SUBTEXT, 400) +
 		embed(tiles.done, 200, 290, 400) +
 		embed(tiles.busy, 760, 290, 400) +
 		embed(tiles.loop, 1320, 290, 400) +
